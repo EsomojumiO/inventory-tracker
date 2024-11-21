@@ -40,4 +40,49 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Edit an item (PUT request)
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, category, quantity, price, description } = req.body;
+
+    try {
+        // Find the item by ID and update it
+        const updatedItem = await Item.findByIdAndUpdate(id, {
+            name,
+            category,
+            quantity,
+            price,
+            description
+        }, { new: true });
+
+        if (!updatedItem) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        res.json(updatedItem); // Return the updated item in the response
+    } catch (error) {
+        console.error('Error updating item:', error);
+        res.status(500).json({ message: 'Error updating item' });
+    }
+
+});
+
+// DELETE route to remove an item
+router.delete('/delete/:id', async (req, res) => {
+    try {
+        const itemId = req.params.id;
+        const item = await Item.findByIdAndDelete(itemId);
+
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+
+        res.status(200).json({ message: 'Item deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
 module.exports = router;
