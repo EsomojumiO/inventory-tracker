@@ -1,38 +1,194 @@
+/* App.css */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1446aa;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100vh;
+}
+
 .App {
+  width: 90%;
+  max-width: 1200px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+/* Items List */
+.items-list {
+  flex: 1 1 48%;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.items-list h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.items-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.items-list li {
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.items-list li:hover {
+  background-color: #f1f1f1;
+  transform: translateY(-5px);
+}
+
+.items-list li strong {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.items-list li p {
+  font-size: 1rem;
+  color: #666;
+}
+
+.items-list button {
+  background-color: #e1e1e1;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.items-list button:hover {
+  background-color: #d4d4d4;
+}
+
+.items-list button:active {
+  background-color: #cccccc;
+}
+
+/* Add New Item Form */
+.add-item-form {
+  flex: 1 1 48%;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+}
+
+.add-item-form h2 {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #444;
+  margin-bottom: 20px;
+}
+
+form div {
+  margin-bottom: 20px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+input:focus, textarea:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+button {
+  padding: 12px 20px;
+  background-color: #4CAF50;
   color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  width: 100%;
+  transition: background-color 0.3s ease;
 }
 
-.App-link {
-  color: #61dafb;
+button:hover {
+  background-color: #45a049;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
+
+/* Error Message */
+.error {
+  color: #ff4d4d;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #ffe6e6;
+  border-left: 5px solid #ff4d4d;
+}
+
+/* Media Query for Smaller Screens */
+@media (max-width: 768px) {
+  .App {
+      padding: 20px;
+      width: 100%;
+      flex-direction: column;
   }
-  to {
-    transform: rotate(360deg);
+
+  .items-list, .add-item-form {
+      flex: 1 1 100%;
+  }
+
+  h1 {
+      font-size: 2rem;
+  }
+
+  .items-list h2 {
+      font-size: 1.5rem;
+  }
+
+  .items-list li {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .items-list button {
+      margin-top: 10px;
+      width: 100%;
   }
 }

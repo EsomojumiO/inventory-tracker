@@ -1,44 +1,120 @@
+/* General styling for the app */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 20px;
+}
+
 .App {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-  }
-  
-  h1 {
-    color: #333;
-  }
-  
-  .error {
-    color: red;
-  }
-  
-  .items-list {
-    margin-bottom: 20px;
-  }
-  
-  .add-item-form {
-    margin-top: 30px;
-  }
-  
-  form div {
-    margin-bottom: 10px;
-  }
-  
-  input, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    margin-bottom: 10px;
-  }
-  
-  button {
-    padding: 10px 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #45a049;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Styling for the error messages */
+.error {
+  color: red;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+/* Items list table */
+.items-list {
+  flex: 1;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.items-list table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.items-list table th,
+.items-list table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.items-list table th {
+  background-color: #4CAF50;
+  color: white;
+  font-size: 1rem;
+}
+
+.items-list table td {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* Add item form */
+.add-item-form {
+  width: 300px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.add-item-form h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.add-item-form form div {
+  margin-bottom: 10px;
+}
+
+.add-item-form input,
+.add-item-form textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.add-item-form button {
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+.add-item-form button:hover {
+  background-color: #45a049;
+}
+
+/* Button styling */
+button {
+  padding: 10px 15px;
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #1976d2;
+}

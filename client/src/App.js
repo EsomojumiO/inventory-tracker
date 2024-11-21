@@ -127,89 +127,188 @@ const deleteItem = async (id) => {
     });
   };
 
-  return (
-    <div className="App">
-      <h1>Digitplus Inventory Software</h1>
+//   return (
+//     <div className="App">
+//       <h1>Digitplus Inventory Software</h1>
+
+//       {/* Error message */}
+//       {error && <p className="error">{error}</p>}
+
+//       {/* Display existing items */}
+//       <div className="items-list">
+//         <h2>Inventoty List</h2>
+//         <ul>
+//           {items.length > 0 ? (
+//             items.map((item) => (
+//               <li key={item._id}>
+//                 <strong>{item.name}</strong> - {item.category} - {item.quantity} pcs - ₦{item.price.toFixed(2)}
+//                 <p>{item.description}</p>
+//                 <button onClick={() => handleEdit(item)}>Edit</button>
+//                 <button onClick={() => deleteItem(item._id)}>Delete</button>
+//               </li>
+//             ))
+//           ) : (
+//             <p>No items available</p>
+//           )}
+//         </ul>
+//       </div>
+
+//       {/* Form to add/edit item */}
+//       <div className="add-item-form">
+//         <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
+//         <form onSubmit={handleSubmit}>
+//           <div>
+//             <label>Name:</label>
+//             <input
+//               type="text"
+//               name="name"
+//               value={formData.name}
+//               onChange={handleChange}
+//               required
+//             />
+//           </div>
+//           <div>
+//             <label>Category:</label>
+//             <input
+//               type="text"
+//               name="category"
+//               value={formData.category}
+//               onChange={handleChange}
+//               required
+//             />
+//           </div>
+//           <div>
+//             <label>Quantity:</label>
+//             <input
+//               type="number"
+//               name="quantity"
+//               value={formData.quantity}
+//               onChange={handleChange}
+//               required
+//             />
+//           </div>
+//           <div>
+//             <label>Price:</label>
+//             <input
+//               type="number"
+//               name="price"
+//               value={formData.price}
+//               onChange={handleChange}
+//               required
+//             />
+//           </div>
+//           <div>
+//             <label>Description:</label>
+//             <textarea
+//               name="description"
+//               value={formData.description}
+//               onChange={handleChange}
+//             ></textarea>
+//           </div>
+//           <button type="submit">{editingItem ? 'Update Item' : 'Add Item'}</button>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
+
+
+return (
+  <div className="App">
+    <div className="items-list">
+      <h1>Digitplus Inventory </h1>
 
       {/* Error message */}
       {error && <p className="error">{error}</p>}
 
-      {/* Display existing items */}
-      <div className="items-list">
-        <h2>Inventoty List</h2>
-        <ul>
+      {/* Display existing items in a table */}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
           {items.length > 0 ? (
             items.map((item) => (
-              <li key={item._id}>
-                <strong>{item.name}</strong> - {item.category} - {item.quantity} pcs - ₦{item.price.toFixed(2)}
-                <p>{item.description}</p>
-                <button onClick={() => handleEdit(item)}>Edit</button>
-                <button onClick={() => deleteItem(item._id)}>Delete</button>
-              </li>
+              <tr key={item._id}>
+                <td>{item.name}</td>
+                <td>{item.category}</td>
+                <td>{item.quantity}</td>
+                <td>₦{item.price}</td>
+                <td>{item.description}</td>
+              </tr>
             ))
           ) : (
-            <p>No items available</p>
+            <tr>
+              <td colSpan="5">No items available</td>
+            </tr>
           )}
-        </ul>
-      </div>
-
-      {/* Form to add/edit item */}
-      <div className="add-item-form">
-        <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Name:</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Category:</label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Quantity:</label>
-            <input
-              type="number"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Price:</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Description:</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            ></textarea>
-          </div>
-          <button type="submit">{editingItem ? 'Update Item' : 'Add Item'}</button>
-        </form>
-      </div>
+        </tbody>
+      </table>
     </div>
-  );
+
+    {/* Add New Item Form */}
+    <div className="add-item-form">
+      <h2>Add New Item</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Name:</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Category:</label>
+          <input
+            type="text"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Quantity:</label>
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Price:</label>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Description:</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+          ></textarea>
+        </div>
+        <button type="submit">Add Item</button>
+      </form>
+    </div>
+  </div>
+);
 };
 
 export default App;
