@@ -1,4 +1,3 @@
-// App.js (React frontend code)
 import React, { useState, useEffect } from 'react';
 import './App.css'; // Make sure this CSS file exists
 
@@ -17,15 +16,17 @@ const App = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/items');
+        const response = await fetch('http://localhost:5000/api/items'); // Backend API endpoint
+        if (!response.ok) throw new Error('Failed to fetch'); // Handle non-200 responses
         const data = await response.json();
-        setItems(data);
+        setItems(data); // Set fetched items in state
       } catch (err) {
-        setError('Error fetching items');
+        console.error('Fetch error:', err);
+        setError('Error fetching items'); // Display error to user
       }
     };
 
-    fetchItems();
+    fetchItems(); // Fetch items on component mount
   }, []);
 
   // Handle input changes in the form
@@ -37,44 +38,47 @@ const App = () => {
     });
   };
 
-  // Handle form submission to create a new item
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newItem = {
-      name: formData.name,
-      category: formData.category,
-      quantity: parseInt(formData.quantity, 10),
-      price: parseFloat(formData.price),
-      description: formData.description
+        name: formData.name,
+        category: formData.category,
+        quantity: parseInt(formData.quantity, 10),
+        price: parseFloat(formData.price),
+        description: formData.description
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newItem)
-      });
-
-      if (response.ok) {
-        const addedItem = await response.json();
-        setItems([...items, addedItem]);
-        setFormData({
-          name: '',
-          category: '',
-          quantity: 0,
-          price: 0,
-          description: ''
+        const response = await fetch('http://localhost:5000/api/items', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newItem)
         });
-      } else {
-        setError('Error adding item');
-      }
+
+        // Check if the response was successful (status code 201)
+        if (response.ok) {
+            const addedItem = await response.json();
+            setItems([...items, addedItem]); // Add the new item to the list
+            setFormData({
+                name: '',
+                category: '',
+                quantity: 0,
+                price: 0,
+                description: ''
+            });
+            setError(null); // Reset error message
+        } else {
+            const errorData = await response.json();
+            setError(errorData.message || 'Error adding item');
+        }
     } catch (err) {
-      setError('Error adding item');
+        console.error('Error adding item:', err);
+        setError('Error adding item');
     }
-  };
+};
 
   return (
     <div className="App">
@@ -90,7 +94,7 @@ const App = () => {
           {items.length > 0 ? (
             items.map((item) => (
               <li key={item._id}>
-                <strong>{item.name}</strong> - {item.category} - {item.quantity} pcs - ${item.price}
+                <strong>{item.name}</strong> - {item.category} - {item.quantity} pcs - ₦{item.price}
                 <p>{item.description}</p>
               </li>
             ))
