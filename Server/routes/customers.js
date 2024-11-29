@@ -49,7 +49,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // Build query
     let query = { createdBy: req.user.id };
 
-    // Search across multiple fields
+    // Add search functionality
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -60,41 +60,39 @@ router.get('/', authenticateToken, async (req, res) => {
       ];
     }
 
-    // Apply filters
+    // Add filters
     if (type) query.type = type;
     if (status) query.status = status;
     if (category) query.category = category;
     if (city) query['address.city'] = city;
     if (state) query['address.state'] = state;
 
-    // Calculate pagination
-    const skip = (page - 1) * limit;
+    // Count total documents for pagination
+    const totalCustomers = await Customer.countDocuments(query);
 
-    // Execute query with sorting and pagination
+    // Build and execute query
     const customers = await Customer.find(query)
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .select('-communications -notes -interactions');
+      .skip((page - 1) * limit)
+      .limit(Number(limit))
+      .lean();
 
-    // Get total count for pagination
-    const total = await Customer.countDocuments(query);
-
+    // Send response
     res.json({
       success: true,
       customers,
       pagination: {
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / limit)
+        total: totalCustomers,
+        page: Number(page),
+        pages: Math.ceil(totalCustomers / limit)
       }
     });
   } catch (error) {
     console.error('Error fetching customers:', error);
-    res.status(500).json({
-      success: false,
+    res.status(500).json({ 
+      success: false, 
       message: 'Error fetching customers',
-      error: error.message
+      error: error.message 
     });
   }
 });

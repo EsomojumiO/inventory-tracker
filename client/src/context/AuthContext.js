@@ -17,54 +17,19 @@ const AuthContext = createContext({
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem(config.TOKEN_KEY));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { notify } = useNotification();
 
-  // Initialize auth state
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-          // Verify token and get user data
-          const response = await fetch(`${config.API_BASE_URL}/auth/verify`, {
-            headers: {
-              'Authorization': `Bearer ${storedToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
-            setToken(storedToken);
-            setIsAuthenticated(true);
-          } else {
-            // Token is invalid
-            localStorage.removeItem('token');
-            setUser(null);
-            setToken(null);
-            setIsAuthenticated(false);
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-        localStorage.removeItem('token');
-        setUser(null);
-        setToken(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeAuth();
-  }, []);
+  const logout = useCallback(() => {
+    localStorage.removeItem(config.TOKEN_KEY);
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
+    notify('Logged out successfully', 'success');
+  }, [notify]);
 
   // Token refresh mechanism
   useEffect(() => {
@@ -82,14 +47,52 @@ export const AuthProvider = ({ children }) => {
         logout();
       }
     }
-  }, [token]);
+  }, [token, logout]);
+
+  // Initialize auth state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem(config.TOKEN_KEY);
+        if (storedToken) {
+          // Verify token and get user data
+          const response = await fetch(`${config.API_BASE_URL}${config.endpoints.auth.verify}`, {
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+            setToken(storedToken);
+            setIsAuthenticated(true);
+          } else {
+            logout();
+            notify('Session expired. Please login again.', 'warning');
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+        logout();
+        notify('Authentication error. Please login again.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, [notify, logout]);
 
   const login = async (credentials) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${config.API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${config.API_BASE_URL}${config.endpoints.auth.login}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -99,34 +102,23 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(credentials)
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (err) {
-        console.error('Error parsing response:', err);
-        throw new Error('Invalid server response');
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem(config.TOKEN_KEY, data.token);
+        setToken(data.token);
+        setUser(data.user);
+        setIsAuthenticated(true);
+        notify('Login successful', 'success');
+        return data;
+      } else {
+        throw new Error(data.message || 'Login failed');
       }
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to login');
-      }
-
-      // Store token
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-
-      // Set user data
-      setUser(data.user);
-      setIsAuthenticated(true);
-
-      notify('Login successful!', 'success');
-      return { success: true };
     } catch (err) {
       console.error('Login error:', err);
-      const errorMessage = err.message || 'Failed to login';
-      setError(errorMessage);
-      notify(errorMessage, 'error');
-      return { success: false, error: errorMessage };
+      setError(err.message);
+      notify(err.message, 'error');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -137,24 +129,23 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${config.API_BASE_URL}/auth/register`, {
+      const response = await fetch(`${config.API_BASE_URL}${config.endpoints.auth.register}`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        credentials: 'include',
         body: JSON.stringify(userData)
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (response.ok) {
+        notify('Registration successful! Please login.', 'success');
+        return { success: true };
+      } else {
         throw new Error(data.message || 'Registration failed');
       }
-
-      notify('Registration successful! Please login.', 'success');
-      return { success: true };
     } catch (err) {
       console.error('Registration error:', err);
       const errorMessage = err.message || 'Registration failed';
@@ -166,28 +157,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setToken(null);
-    setIsAuthenticated(false);
-    notify('Logged out successfully', 'success');
-  }, [notify]);
-
   const clearError = () => setError(null);
 
+  const value = {
+    user,
+    token,
+    login,
+    logout,
+    register,
+    clearError,
+    isAuthenticated,
+    loading,
+    error
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      login,
-      logout,
-      register,
-      clearError,
-      isAuthenticated,
-      loading,
-      error
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

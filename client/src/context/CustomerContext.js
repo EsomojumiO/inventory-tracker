@@ -4,122 +4,156 @@ import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import config from '../config';
 
-const CustomerContext = createContext(null);
+// Create context with meaningful default values
+const CustomerContext = createContext({
+  customers: [],
+  loading: false,
+  error: null,
+  fetchCustomers: () => Promise.resolve(),
+  addCustomer: () => Promise.resolve({ success: false }),
+  updateCustomer: () => Promise.resolve({ success: false })
+});
 
 export const CustomerProvider = ({ children }) => {
-    const [customers, setCustomers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [state, setState] = useState({
+        customers: [],
+        loading: true,
+        error: null
+    });
+
     const { token, isAuthenticated } = useAuth();
     const { notify } = useNotification();
 
     const fetchCustomers = useCallback(async () => {
         if (!token || !isAuthenticated) {
-            setLoading(false);
+            setState(prev => ({ ...prev, loading: false, customers: [], error: null }));
             return;
         }
 
-        setLoading(true);
-        setError(null);
+        setState(prev => ({ ...prev, loading: true, error: null }));
         
         try {
             const response = await axios.get(
-                `${config.apiUrl}/customers`,
-                { headers: { Authorization: `Bearer ${token}` } }
+                `${config.API_BASE_URL}/api/customers`,
+                { 
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
-            setCustomers(response.data.customers || []);
+            
+            if (!response || !response.data) {
+                throw new Error('Invalid response from server');
+            }
+
+            const customerData = Array.isArray(response.data) ? response.data :
+                               response.data.customers ? response.data.customers :
+                               [];
+
+            setState(prev => ({
+                ...prev,
+                customers: customerData,
+                loading: false,
+                error: null
+            }));
+
         } catch (error) {
             console.error('Error fetching customers:', error);
-            setError(error.message);
-            notify('Error fetching customers', 'error');
-        } finally {
-            setLoading(false);
+            const errorMessage = error.response?.data?.message || error.message || 'Error loading customers';
+            
+            setState(prev => ({
+                ...prev,
+                customers: [],
+                loading: false,
+                error: errorMessage
+            }));
+
+            notify(errorMessage, 'error');
         }
     }, [token, isAuthenticated, notify]);
 
+    const addCustomer = async (customerData) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            const response = await axios.post(
+                `${config.API_BASE_URL}/api/customers`,
+                customerData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (!response || !response.data) {
+                throw new Error('Invalid response from server');
+            }
+
+            await fetchCustomers();
+            notify('Customer added successfully', 'success');
+            return { success: true, customer: response.data };
+
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || 'Error adding customer';
+            setState(prev => ({ ...prev, loading: false, error: errorMessage }));
+            notify(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    };
+
+    const updateCustomer = async (customerId, customerData) => {
+        setState(prev => ({ ...prev, loading: true, error: null }));
+
+        try {
+            const response = await axios.put(
+                `${config.API_BASE_URL}/api/customers/${customerId}`,
+                customerData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (!response || !response.data) {
+                throw new Error('Invalid response from server');
+            }
+
+            await fetchCustomers();
+            notify('Customer updated successfully', 'success');
+            return { success: true, customer: response.data };
+
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || error.message || 'Error updating customer';
+            setState(prev => ({ ...prev, loading: false, error: errorMessage }));
+            notify(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    };
+
+    // Initialize customers when auth state changes
     useEffect(() => {
         if (isAuthenticated && token) {
             fetchCustomers();
         } else {
-            setCustomers([]);
-            setLoading(false);
-            setError(null);
+            setState(prev => ({
+                ...prev,
+                customers: [],
+                loading: false,
+                error: null
+            }));
         }
     }, [isAuthenticated, token, fetchCustomers]);
 
-    const addCustomer = async (customerData) => {
-        if (!token || !isAuthenticated) {
-            notify('Authentication required', 'error');
-            throw new Error('Authentication required');
-        }
-
-        try {
-            const response = await axios.post(
-                `${config.apiUrl}/customers`,
-                customerData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setCustomers(prev => [...prev, response.data.customer]);
-            notify('Customer added successfully', 'success');
-            return response.data.customer;
-        } catch (error) {
-            notify(error.response?.data?.message || 'Error adding customer', 'error');
-            throw error;
-        }
-    };
-
-    const updateCustomer = async (id, customerData) => {
-        if (!token || !isAuthenticated) {
-            notify('Authentication required', 'error');
-            throw new Error('Authentication required');
-        }
-
-        try {
-            const response = await axios.put(
-                `${config.apiUrl}/customers/${id}`,
-                customerData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setCustomers(prev => 
-                prev.map(customer => 
-                    customer._id === id ? response.data.customer : customer
-                )
-            );
-            notify('Customer updated successfully', 'success');
-            return response.data.customer;
-        } catch (error) {
-            notify(error.response?.data?.message || 'Error updating customer', 'error');
-            throw error;
-        }
-    };
-
-    const deleteCustomer = async (id) => {
-        if (!token || !isAuthenticated) {
-            notify('Authentication required', 'error');
-            throw new Error('Authentication required');
-        }
-
-        try {
-            await axios.delete(
-                `${config.apiUrl}/customers/${id}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            setCustomers(prev => prev.filter(customer => customer._id !== id));
-            notify('Customer deleted successfully', 'success');
-        } catch (error) {
-            notify(error.response?.data?.message || 'Error deleting customer', 'error');
-            throw error;
-        }
-    };
-
     const value = {
-        customers,
-        loading,
-        error,
+        ...state,
+        fetchCustomers,
         addCustomer,
-        updateCustomer,
-        deleteCustomer,
-        fetchCustomers
+        updateCustomer
     };
 
     return (

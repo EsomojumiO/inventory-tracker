@@ -26,15 +26,17 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
   const initialFormState = {
     // Basic Information
     type: 'individual',
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    dateOfBirth: null,
+    alternatePhone: '',
     
     // Business Details (for business customers)
-    companyName: '',
+    businessName: '',
     taxId: '',
     industry: '',
+    website: '',
     
     // Address
     address: {
@@ -42,38 +44,66 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
       city: '',
       state: '',
       postalCode: '',
-      country: ''
+      country: 'Nigeria',
+      isShippingAddress: true,
+      isBillingAddress: true
     },
     
     // Financial Information
     creditLimit: 0,
-    paymentTerms: 'net30',
-    taxExempt: false,
+    paymentTerms: 'prepaid',
+    preferredPaymentMethod: 'cash',
     
     // Communication Preferences
-    preferredContact: 'email',
-    marketingOptIn: true,
-    language: 'en',
+    communicationPreferences: {
+      email: true,
+      sms: true,
+      whatsapp: true,
+      marketing: true
+    },
     
     // Custom Fields
     tags: [],
-    notes: '',
+    notes: [],
     
-    // Status
-    status: 'active'
+    // Status and Category
+    status: 'active',
+    category: 'regular'
   };
 
-  const [formData, setFormData] = useState(initialFormState);
-  const [newTag, setNewTag] = useState('');
+  const [formData, setFormData] = useState(customer ? { 
+    ...initialFormState, 
+    ...customer,
+    communicationPreferences: {
+      ...initialFormState.communicationPreferences,
+      ...(customer?.communicationPreferences || {})
+    },
+    address: {
+      ...initialFormState.address,
+      ...(customer?.address || {})
+    }
+  } : initialFormState);
 
   useEffect(() => {
     if (customer) {
       setFormData({
         ...initialFormState,
-        ...customer
+        ...customer,
+        communicationPreferences: {
+          ...initialFormState.communicationPreferences,
+          ...(customer.communicationPreferences || {})
+        },
+        address: {
+          ...initialFormState.address,
+          ...(customer.address || {})
+        }
       });
+    } else {
+      setFormData(initialFormState);
     }
   }, [customer]);
+
+  const [newTag, setNewTag] = useState('');
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -161,9 +191,19 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    name="name"
-                    label={formData.type === 'individual' ? 'Full Name' : 'Contact Name'}
-                    value={formData.name}
+                    name="firstName"
+                    label="First Name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="lastName"
+                    label="Last Name"
+                    value={formData.lastName}
                     onChange={handleChange}
                     required
                   />
@@ -173,9 +213,9 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
-                        name="companyName"
-                        label="Company Name"
-                        value={formData.companyName}
+                        name="businessName"
+                        label="Business Name"
+                        value={formData.businessName}
                         onChange={handleChange}
                         required
                       />
@@ -186,6 +226,24 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                         name="taxId"
                         label="Tax ID"
                         value={formData.taxId}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="industry"
+                        label="Industry"
+                        value={formData.industry}
+                        onChange={handleChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="website"
+                        label="Website"
+                        value={formData.website}
                         onChange={handleChange}
                       />
                     </Grid>
@@ -209,20 +267,18 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                     label="Phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    required
                   />
                 </Grid>
-                {formData.type === 'individual' && (
-                  <Grid item xs={12} sm={6}>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="Date of Birth"
-                        value={formData.dateOfBirth}
-                        onChange={handleDateChange}
-                        renderInput={(params) => <TextField {...params} fullWidth />}
-                      />
-                    </LocalizationProvider>
-                  </Grid>
-                )}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    name="alternatePhone"
+                    label="Alternate Phone"
+                    value={formData.alternatePhone}
+                    onChange={handleChange}
+                  />
+                </Grid>
               </Grid>
             </Grid>
 
@@ -281,6 +337,28 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                     onChange={handleChange}
                   />
                 </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.address.isShippingAddress}
+                        onChange={handleSwitchChange('address.isShippingAddress')}
+                      />
+                    }
+                    label="Is Shipping Address"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.address.isBillingAddress}
+                        onChange={handleSwitchChange('address.isBillingAddress')}
+                      />
+                    }
+                    label="Is Billing Address"
+                  />
+                </Grid>
               </Grid>
             </Grid>
 
@@ -313,22 +391,25 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                       onChange={handleChange}
                       label="Payment Terms"
                     >
-                      <MenuItem value="net30">Net 30</MenuItem>
-                      <MenuItem value="net60">Net 60</MenuItem>
-                      <MenuItem value="net90">Net 90</MenuItem>
+                      <MenuItem value="prepaid">Prepaid</MenuItem>
+                      <MenuItem value="postpaid">Postpaid</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.taxExempt}
-                        onChange={handleSwitchChange('taxExempt')}
-                      />
-                    }
-                    label="Tax Exempt"
-                  />
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Preferred Payment Method</InputLabel>
+                    <Select
+                      name="preferredPaymentMethod"
+                      value={formData.preferredPaymentMethod}
+                      onChange={handleChange}
+                      label="Preferred Payment Method"
+                    >
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="bankTransfer">Bank Transfer</MenuItem>
+                      <MenuItem value="creditCard">Credit Card</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
               </Grid>
             </Grid>
@@ -343,45 +424,48 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                 Communication Preferences
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Preferred Contact Method</InputLabel>
-                    <Select
-                      name="preferredContact"
-                      value={formData.preferredContact}
-                      onChange={handleChange}
-                      label="Preferred Contact Method"
-                    >
-                      <MenuItem value="email">Email</MenuItem>
-                      <MenuItem value="phone">Phone</MenuItem>
-                      <MenuItem value="mail">Mail</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Language</InputLabel>
-                    <Select
-                      name="language"
-                      value={formData.language}
-                      onChange={handleChange}
-                      label="Language"
-                    >
-                      <MenuItem value="en">English</MenuItem>
-                      <MenuItem value="es">Spanish</MenuItem>
-                      <MenuItem value="fr">French</MenuItem>
-                    </Select>
-                  </FormControl>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.communicationPreferences.email}
+                        onChange={handleSwitchChange('communicationPreferences.email')}
+                      />
+                    }
+                    label="Email"
+                  />
                 </Grid>
                 <Grid item xs={12}>
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={formData.marketingOptIn}
-                        onChange={handleSwitchChange('marketingOptIn')}
+                        checked={formData.communicationPreferences.sms}
+                        onChange={handleSwitchChange('communicationPreferences.sms')}
                       />
                     }
-                    label="Opt-in to Marketing Communications"
+                    label="SMS"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.communicationPreferences.whatsapp}
+                        onChange={handleSwitchChange('communicationPreferences.whatsapp')}
+                      />
+                    }
+                    label="Whatsapp"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.communicationPreferences.marketing}
+                        onChange={handleSwitchChange('communicationPreferences.marketing')}
+                      />
+                    }
+                    label="Marketing"
                   />
                 </Grid>
               </Grid>
@@ -439,6 +523,20 @@ const CustomerForm = ({ open, onClose, onSubmit, customer }) => {
                       <MenuItem value="active">Active</MenuItem>
                       <MenuItem value="inactive">Inactive</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      label="Category"
+                    >
+                      <MenuItem value="regular">Regular</MenuItem>
+                      <MenuItem value="premium">Premium</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

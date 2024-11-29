@@ -57,7 +57,7 @@ const CustomerManager = () => {
     customers, 
     loading, 
     error, 
-    createCustomer,
+    addCustomer,
     updateCustomer,
     deleteCustomer 
   } = useCustomer();
@@ -127,7 +127,7 @@ const CustomerManager = () => {
         await updateCustomer(selectedCustomer._id, customerData);
         showSuccess('Customer updated successfully');
       } else {
-        await createCustomer(customerData);
+        await addCustomer(customerData);
         showSuccess('Customer created successfully');
       }
       setShowForm(false);
