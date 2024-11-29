@@ -244,42 +244,35 @@ router.post('/login', async (req, res) => {
         const token = generateToken(user);
         setTokenCookie(res, token);
 
-        // Set session
-        req.session.user = {
+        // Return user data without password
+        const userData = {
             id: user._id,
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            businessName: user.businessName
         };
-        
+
         // Return success response
         res.json({
             success: true,
             message: 'Login successful',
             token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role
-            }
+            user: userData
         });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({
             success: false,
-            message: 'An error occurred during login'
+            message: 'An error occurred during login. Please try again.'
         });
     }
 });
 
 // Logout
 router.post('/logout', (req, res) => {
-    // Clear session
-    req.session.destroy();
-    
     // Clear token cookie
     res.clearCookie('token', { 
         path: '/',

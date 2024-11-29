@@ -1,29 +1,70 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Container,
   Paper,
   Tabs,
   Tab,
   Typography,
   Button,
   CircularProgress,
-  Alert
+  Alert,
+  Grid,
+  Divider,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Chip
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Sort as SortIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
+  ImportExport as ImportExportIcon,
+  GetApp as ExportIcon
+} from '@mui/icons-material';
 import CustomerList from './CustomerList';
 import CustomerDetails from './CustomerDetails';
+import CustomerForm from './CustomerForm';
+import CustomerAnalytics from './CustomerAnalytics';
 import { useCustomer } from '../../context/CustomerContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 
 const CustomerManager = () => {
+  // State management
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const { customers, loading, error, updateCustomer } = useCustomer();
+  const [viewMode, setViewMode] = useState('grid');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    type: '',
+    status: '',
+    category: ''
+  });
+  const [sortBy, setSortBy] = useState('lastPurchaseDate');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
+  const [sortAnchorEl, setSortAnchorEl] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  // Context hooks
+  const { 
+    customers, 
+    loading, 
+    error, 
+    createCustomer,
+    updateCustomer,
+    deleteCustomer 
+  } = useCustomer();
   const { showSuccess, showError } = useNotification();
   const { isAuthenticated } = useAuth();
 
+  // Event handlers
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
   };
@@ -33,16 +74,80 @@ const CustomerManager = () => {
     setCurrentTab(1);
   };
 
-  const handleCustomerUpdate = async (updatedCustomer) => {
+  const handleViewModeChange = () => {
+    setViewMode(prev => prev === 'grid' ? 'list' : 'grid');
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleFilterClick = (event) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
+  };
+
+  const handleSortClick = (event) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+
+  const handleSortClose = () => {
+    setSortAnchorEl(null);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+    handleFilterClose();
+  };
+
+  const handleSortChange = (field) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    handleSortClose();
+  };
+
+  const handleAddCustomer = () => {
+    setShowForm(true);
+    setSelectedCustomer(null);
+  };
+
+  const handleCustomerSubmit = async (customerData) => {
     try {
-      await updateCustomer(updatedCustomer._id, updatedCustomer);
-      setSelectedCustomer(updatedCustomer);
-      showSuccess('Customer updated successfully');
+      if (selectedCustomer) {
+        await updateCustomer(selectedCustomer._id, customerData);
+        showSuccess('Customer updated successfully');
+      } else {
+        await createCustomer(customerData);
+        showSuccess('Customer created successfully');
+      }
+      setShowForm(false);
     } catch (error) {
-      showError('Failed to update customer');
+      showError(error.message);
     }
   };
 
+  const handleCustomerDelete = async (customerId) => {
+    try {
+      await deleteCustomer(customerId);
+      showSuccess('Customer deleted successfully');
+      setSelectedCustomer(null);
+      setCurrentTab(0);
+    } catch (error) {
+      showError(error.message);
+    }
+  };
+
+  // Authentication check
   if (!isAuthenticated) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -53,6 +158,7 @@ const CustomerManager = () => {
     );
   }
 
+  // Loading state
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -61,6 +167,7 @@ const CustomerManager = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -71,68 +178,182 @@ const CustomerManager = () => {
     );
   }
 
-  if (!customers || customers.length === 0) {
-    return (
-      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="400px">
-        <Typography variant="h6" gutterBottom>
-          No customers found
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-        >
-          Add Your First Customer
-        </Button>
-      </Box>
-    );
-  }
-
   return (
-    <Container maxWidth="lg">
-      <Box mb={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h4" component="h1">
-            Customer Management
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-          >
-            Add Customer
-          </Button>
-        </Box>
-        
-        <Paper>
-          <Tabs
-            value={currentTab}
-            onChange={handleTabChange}
-            indicatorColor="primary"
-            textColor="primary"
-          >
-            <Tab label="Customer List" />
-            <Tab label="Customer Details" disabled={!selectedCustomer} />
-          </Tabs>
-        </Paper>
-
-        <Box mt={3}>
-          {currentTab === 0 ? (
-            <CustomerList
-              customers={customers}
-              onCustomerSelect={handleCustomerSelect}
-            />
-          ) : (
-            selectedCustomer && (
-              <CustomerDetails
-                customer={selectedCustomer}
-                onUpdate={handleCustomerUpdate}
-              />
-            )
-          )}
-        </Box>
+    <Paper elevation={2}>
+      {/* Header */}
+      <Box p={3}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <Typography variant="h4" component="h1">
+              Customer Management
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box display="flex" justifyContent="flex-end" gap={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={handleAddCustomer}
+              >
+                Add Customer
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<ImportExportIcon />}
+              >
+                Import
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<ExportIcon />}
+              >
+                Export
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
-    </Container>
+
+      <Divider />
+
+      {/* Toolbar */}
+      <Box p={2}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search customers..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                )
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box display="flex" justifyContent="flex-end" gap={1}>
+              <IconButton onClick={handleFilterClick}>
+                <FilterIcon />
+              </IconButton>
+              <IconButton onClick={handleSortClick}>
+                <SortIcon />
+              </IconButton>
+              <IconButton onClick={handleViewModeChange}>
+                {viewMode === 'grid' ? <ViewListIcon /> : <ViewModuleIcon />}
+              </IconButton>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Active filters */}
+        {Object.entries(filters).some(([_, value]) => value) && (
+          <Box mt={2} display="flex" gap={1}>
+            {Object.entries(filters).map(([key, value]) => 
+              value && (
+                <Chip
+                  key={key}
+                  label={`${key}: ${value}`}
+                  onDelete={() => handleFilterChange(key, '')}
+                />
+              )
+            )}
+          </Box>
+        )}
+      </Box>
+
+      <Divider />
+
+      {/* Tabs */}
+      <Tabs
+        value={currentTab}
+        onChange={handleTabChange}
+        indicatorColor="primary"
+        textColor="primary"
+      >
+        <Tab label="All Customers" />
+        {selectedCustomer && <Tab label="Customer Details" />}
+        <Tab label="Analytics" />
+      </Tabs>
+
+      {/* Content */}
+      <Box p={3}>
+        {currentTab === 0 && (
+          <CustomerList
+            customers={customers || []}
+            onCustomerSelect={handleCustomerSelect}
+          />
+        )}
+        {currentTab === 1 && selectedCustomer && (
+          <CustomerDetails
+            customer={selectedCustomer}
+            onEdit={() => setShowForm(true)}
+            onDelete={handleCustomerDelete}
+          />
+        )}
+        {currentTab === 2 && (
+          <CustomerAnalytics />
+        )}
+      </Box>
+
+      {/* Filter Menu */}
+      <Menu
+        anchorEl={filterAnchorEl}
+        open={Boolean(filterAnchorEl)}
+        onClose={handleFilterClose}
+      >
+        <MenuItem onClick={() => handleFilterChange('type', 'individual')}>
+          Individual Customers
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('type', 'business')}>
+          Business Customers
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', 'active')}>
+          Active Customers
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('status', 'inactive')}>
+          Inactive Customers
+        </MenuItem>
+        <MenuItem onClick={() => handleFilterChange('category', 'vip')}>
+          VIP Customers
+        </MenuItem>
+      </Menu>
+
+      {/* Sort Menu */}
+      <Menu
+        anchorEl={sortAnchorEl}
+        open={Boolean(sortAnchorEl)}
+        onClose={handleSortClose}
+      >
+        <MenuItem onClick={() => handleSortChange('lastPurchaseDate')}>
+          Last Purchase Date
+        </MenuItem>
+        <MenuItem onClick={() => handleSortChange('totalSpent')}>
+          Total Spent
+        </MenuItem>
+        <MenuItem onClick={() => handleSortChange('loyaltyPoints')}>
+          Loyalty Points
+        </MenuItem>
+        <MenuItem onClick={() => handleSortChange('name')}>
+          Customer Name
+        </MenuItem>
+      </Menu>
+
+      {/* Customer Form Dialog */}
+      {showForm && (
+        <CustomerForm
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          onSubmit={handleCustomerSubmit}
+          customer={selectedCustomer}
+        />
+      )}
+    </Paper>
   );
 };
 

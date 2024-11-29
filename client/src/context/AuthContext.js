@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import config from '../config';
+import config from '../config/config';
 import { useNotification } from './NotificationContext'; 
 
 const AuthContext = createContext({
@@ -30,10 +30,10 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
           // Verify token and get user data
-          const response = await fetch(`${config.apiUrl}/auth/verify`, {
+          const response = await fetch(`${config.API_BASE_URL}/auth/verify`, {
             headers: {
               'Authorization': `Bearer ${storedToken}`,
-              ...config.defaultHeaders
+              'Content-Type': 'application/json'
             }
           });
           
@@ -89,10 +89,9 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${config.apiUrl}/auth/login`, {
+      const response = await fetch(`${config.API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
-          ...config.defaultHeaders,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
@@ -138,10 +137,9 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${config.apiUrl}/auth/register`, {
+      const response = await fetch(`${config.API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
-          ...config.defaultHeaders,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
@@ -149,23 +147,17 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData)
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (err) {
-        console.error('Error parsing response:', err);
-        throw new Error('Invalid server response');
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed');
       }
 
-      notify('Registration successful! Please log in.', 'success');
+      notify('Registration successful! Please login.', 'success');
       return { success: true };
     } catch (err) {
       console.error('Registration error:', err);
-      const errorMessage = err.message || 'Failed to register';
+      const errorMessage = err.message || 'Registration failed';
       setError(errorMessage);
       notify(errorMessage, 'error');
       return { success: false, error: errorMessage };
@@ -176,28 +168,26 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
-    setToken(null);
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
-    notify('Successfully logged out!', 'success');
+    notify('Logged out successfully', 'success');
   }, [notify]);
 
   const clearError = () => setError(null);
 
-  const value = {
-    user,
-    token,
-    login,
-    logout,
-    register,
-    clearError,
-    isAuthenticated,
-    loading,
-    error,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      login,
+      logout,
+      register,
+      clearError,
+      isAuthenticated,
+      loading,
+      error
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,12 +1,17 @@
 import React from 'react';
+import { Box, Container } from '@mui/material';
 import CustomerManager from './CustomerManager';
-import { Box } from '@mui/material';
+import { CustomerProvider } from '../../context/CustomerContext';
 
 const CustomersPage = () => {
   return (
-    <Box p={3}>
-      <CustomerManager />
-    </Box>
+    <CustomerProvider>
+      <Box py={3}>
+        <Container maxWidth="xl">
+          <CustomerManager />
+        </Container>
+      </Box>
+    </CustomerProvider>
   );
 };
 
