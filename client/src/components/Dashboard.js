@@ -242,7 +242,7 @@ const Dashboard = () => {
         <Grid item xs={12} md={6} lg={3}>
           <MetricCard
             title="Total Value"
-            value={`$${inventorySummary.totalValue.toFixed(2)}`}
+            value={`₦${inventorySummary.totalValue.toFixed(2)}`}
             description="Total inventory value"
             icon={MonetizationOnIcon}
             className="total-value"

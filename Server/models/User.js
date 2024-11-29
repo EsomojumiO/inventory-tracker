@@ -51,10 +51,10 @@ const userSchema = new mongoose.Schema({
         type: String, 
         required: [true, 'Password is required'],
         minlength: [8, 'Password must be at least 8 characters'],
+        select: false, 
         validate: {
             validator: function(password) {
-                // At least one uppercase, one lowercase, and one number
-                return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
+                return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/.test(password);
             },
             message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
         }
@@ -145,7 +145,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     try {
         return await bcrypt.compare(candidatePassword, this.password);
     } catch (error) {
-        throw error;
+        throw new Error('Error comparing passwords');
     }
 };
 

@@ -6,7 +6,7 @@ import {
     Box,
     Button
 } from '@mui/material';
-import { formatCurrency, DEFAULT_CURRENCY } from '../../utils/currency';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 const Receipt = ({ sale = {}, businessInfo = {} }) => {
     const items = sale.items || [];
@@ -52,7 +52,7 @@ const Receipt = ({ sale = {}, businessInfo = {} }) => {
                             {item.name} x {item.quantity}
                         </Typography>
                         <Typography variant="body2">
-                            {formatCurrency(item.price * item.quantity, DEFAULT_CURRENCY.code)}
+                            {formatCurrency(item.price * item.quantity)}
                         </Typography>
                     </Box>
                 ))}
@@ -62,17 +62,17 @@ const Receipt = ({ sale = {}, businessInfo = {} }) => {
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography>Subtotal</Typography>
-                <Typography>{formatCurrency(subtotal, DEFAULT_CURRENCY.code)}</Typography>
+                <Typography>{formatCurrency(subtotal)}</Typography>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography>Tax</Typography>
-                <Typography>{formatCurrency(tax, DEFAULT_CURRENCY.code)}</Typography>
+                <Typography>{formatCurrency(tax)}</Typography>
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="h6">Total</Typography>
-                <Typography variant="h6">{formatCurrency(total, DEFAULT_CURRENCY.code)}</Typography>
+                <Typography variant="h6">{formatCurrency(total)}</Typography>
             </Box>
 
             <Divider sx={{ my: 2 }} />

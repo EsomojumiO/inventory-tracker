@@ -42,8 +42,9 @@ const setTokenCookie = (res, token) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/'
     });
 };
 
@@ -185,12 +186,34 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// Middleware for verifying token
+const authenticateToken = (req, res, next) => {
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: 'Authentication required'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        // Clear invalid token
+        res.clearCookie('token', { path: '/' });
+        return res.status(401).json({
+            success: false,
+            message: 'Invalid or expired token'
+        });
+    }
+};
+
 // Login user
 router.post('/login', async (req, res) => {
     try {
-        // Set content type
-        res.setHeader('Content-Type', 'application/json');
-
         const { username, password } = req.body;
         if (!username || !password) {
             return res.status(400).json({
@@ -200,7 +223,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Find user
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ username }).select('+password');
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -221,6 +244,14 @@ router.post('/login', async (req, res) => {
         const token = generateToken(user);
         setTokenCookie(res, token);
 
+        // Set session
+        req.session.user = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role
+        };
+        
         // Return success response
         res.json({
             success: true,
@@ -237,21 +268,30 @@ router.post('/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        
-        // Handle validation errors
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
-                success: false,
-                message: Object.values(error.errors).map(err => err.message).join(', ')
-            });
-        }
-        
-        // Handle other errors
         res.status(500).json({
             success: false,
-            message: 'Internal server error during login'
+            message: 'An error occurred during login'
         });
     }
+});
+
+// Logout
+router.post('/logout', (req, res) => {
+    // Clear session
+    req.session.destroy();
+    
+    // Clear token cookie
+    res.clearCookie('token', { 
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    });
+
+    res.json({
+        success: true,
+        message: 'Logged out successfully'
+    });
 });
 
 // Refresh token
@@ -297,38 +337,35 @@ router.post('/refresh', async (req, res) => {
     }
 });
 
-// Logout
-router.post('/logout', (req, res) => {
-    res.clearCookie('token');
-    res.json({
-        success: true,
-        message: 'Logged out successfully'
-    });
-});
+// Check auth status
+router.get('/check', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
 
-// Middleware for verifying token
-const authenticateToken = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ message: 'Access denied' });
-
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Invalid token' });
-        req.user = user;
-        next();
-    });
-};
-
-// Role-based access control middleware
-const authorizeRole = (role) => (req, res, next) => {
-    if (req.user.role !== role) {
-        return res.status(403).json({ message: 'Access forbidden' });
+        res.json({
+            success: true,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Auth check error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error checking authentication status'
+        });
     }
-    next();
-};
-
-// Protected route example
-router.get('/admin', authenticateToken, authorizeRole('admin'), (req, res) => {
-    res.json({ message: 'Welcome, admin!' });
 });
 
 // Verify authentication status
@@ -507,5 +544,18 @@ router.get('/apple/callback',
         }
     }
 );
+
+// Role-based access control middleware
+const authorizeRole = (role) => (req, res, next) => {
+    if (req.user.role !== role) {
+        return res.status(403).json({ message: 'Access forbidden' });
+    }
+    next();
+};
+
+// Protected route example
+router.get('/admin', authenticateToken, authorizeRole('admin'), (req, res) => {
+    res.json({ message: 'Welcome, admin!' });
+});
 
 module.exports = router;

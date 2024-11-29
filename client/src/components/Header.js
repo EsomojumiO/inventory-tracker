@@ -16,16 +16,25 @@ import {
   Popover,
   Divider,
 } from '@mui/material';
-import { AccountCircle, Brightness4, Brightness7, Notifications } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { 
+  AccountCircle, 
+  Brightness4, 
+  Brightness7, 
+  Notifications,
+  PointOfSale,
+  Payment 
+} from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '@mui/material/styles';
 
 const Header = ({ toggleColorMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+  const [posAnchorEl, setPosAnchorEl] = useState(null);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
 
   // Sample notifications - in a real app, these would come from your backend
@@ -56,6 +65,14 @@ const Header = ({ toggleColorMode }) => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handlePosMenu = (event) => {
+    setPosAnchorEl(event.currentTarget);
+  };
+
+  const handlePosClose = () => {
+    setPosAnchorEl(null);
   };
 
   const handleNotificationClick = (event) => {
@@ -158,6 +175,50 @@ const Header = ({ toggleColorMode }) => {
           <Button color="inherit" onClick={() => navigate('/documents')}>
             Documents
           </Button>
+          
+          {/* POS Menu Button */}
+          <Button
+            color="inherit"
+            onClick={handlePosMenu}
+            startIcon={<PointOfSale />}
+            sx={{
+              backgroundColor: location.pathname.startsWith('/pos') ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            }}
+          >
+            POS
+          </Button>
+          <Menu
+            anchorEl={posAnchorEl}
+            open={Boolean(posAnchorEl)}
+            onClose={handlePosClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+          >
+            <MenuItem 
+              onClick={() => {
+                navigate('/pos/sales-terminal');
+                handlePosClose();
+              }}
+            >
+              <PointOfSale sx={{ mr: 1 }} />
+              Sales Terminal
+            </MenuItem>
+            <MenuItem 
+              onClick={() => {
+                navigate('/pos/payment');
+                handlePosClose();
+              }}
+            >
+              <Payment sx={{ mr: 1 }} />
+              Payments
+            </MenuItem>
+          </Menu>
         </Box>
 
         {/* Notifications */}

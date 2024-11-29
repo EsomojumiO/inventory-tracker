@@ -75,55 +75,99 @@ async function getOrders(req, res) {
             endDate,
             search,
             page = 1,
-            limit = 10
+            limit = 10,
+            sortBy = 'createdAt',
+            sortOrder = 'desc'
         } = req.query;
 
         // Build query
         const query = {};
         
+        // Status filter
         if (status && status !== 'all') {
             query.status = status;
         }
         
+        // Date range filter
         if (startDate || endDate) {
             query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
+            if (startDate) {
+                const start = new Date(startDate);
+                if (!isNaN(start.getTime())) {
+                    query.createdAt.$gte = start;
+                }
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                if (!isNaN(end.getTime())) {
+                    query.createdAt.$lte = end;
+                }
+            }
         }
 
+        // Search filter
         if (search) {
             query.$or = [
                 { orderNumber: new RegExp(search, 'i') },
                 { 'customer.name': new RegExp(search, 'i') },
-                { 'customer.email': new RegExp(search, 'i') }
+                { 'customer.email': new RegExp(search, 'i') },
+                { 'customer.phone': new RegExp(search, 'i') }
             ];
         }
 
+        // Validate pagination params
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+        const skip = (pageNum - 1) * limitNum;
+
+        // Build sort object
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
         // Execute query with pagination
-        const skip = (page - 1) * limit;
         const orders = await Order.find(query)
-            .sort({ createdAt: -1 })
+            .sort(sortOptions)
             .skip(skip)
-            .limit(limit)
+            .limit(limitNum)
             .populate('items.product', 'name sku price')
+            .populate('processedBy', 'name email')
             .lean();
 
-        // Get total count
+        // Get total count for pagination
         const total = await Order.countDocuments(query);
+
+        // Calculate totals
+        const orderTotals = orders.map(order => {
+            const subtotal = order.items.reduce((sum, item) => {
+                return sum + (item.price * item.quantity);
+            }, 0);
+            const tax = (subtotal * (order.tax || 0.075)); // Default to 7.5% if not specified
+            const total = subtotal + tax;
+            
+            return {
+                ...order,
+                subtotal: Math.round(subtotal * 100) / 100,
+                tax: Math.round(tax * 100) / 100,
+                total: Math.round(total * 100) / 100
+            };
+        });
 
         res.json({
             success: true,
-            orders,
+            orders: orderTotals,
             pagination: {
                 total,
-                page: parseInt(page),
-                pages: Math.ceil(total / limit)
+                page: pageNum,
+                pages: Math.ceil(total / limitNum),
+                limit: limitNum
             }
         });
     } catch (error) {
+        console.error('Error fetching orders:', error);
         res.status(500).json({
             success: false,
-            message: error.message
+            message: 'Failed to fetch orders',
+            error: error.message
         });
     }
 };

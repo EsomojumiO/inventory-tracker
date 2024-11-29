@@ -11,11 +11,11 @@ import {
     MenuItem
 } from '@mui/material';
 import {
-    TrendingUp,
     ShoppingCart,
     Inventory,
     Group,
-    Warning
+    Warning,
+    CurrencyExchange
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -41,7 +41,13 @@ const StatCard = ({ title, value, icon, color }) => (
                     <Typography color="textSecondary" variant="subtitle2" gutterBottom>
                         {title}
                     </Typography>
-                    <Typography variant="h4">{value}</Typography>
+                    <Typography variant="h4">
+                        {title.includes('Sales') ? (
+                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                                <span style={{ marginRight: '4px' }}>₦</span>{value.replace(/[₦$]/g, '')}
+                            </Box>
+                        ) : value}
+                    </Typography>
                 </Grid>
             </Grid>
         </CardContent>
@@ -115,9 +121,9 @@ const Dashboard = () => {
     }, [startDate, endDate, groupBy]);
 
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('en-NG', {
             style: 'currency',
-            currency: 'USD'
+            currency: 'NGN'
         }).format(value);
     };
 
@@ -168,7 +174,7 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Daily Sales"
                                     value={formatCurrency(dashboardData.dailySales.totalSales)}
-                                    icon={<TrendingUp />}
+                                    icon={<CurrencyExchange />}
                                     color="#0088FE"
                                 />
                             </Grid>

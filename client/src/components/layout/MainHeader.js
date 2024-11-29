@@ -1,308 +1,432 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import {
     AppBar,
+    Box,
     Toolbar,
     IconButton,
     Typography,
-    Button,
     Menu,
+    Container,
+    Avatar,
+    Tooltip,
     MenuItem,
-    Box,
-    Badge,
-    useTheme,
-    useMediaQuery,
-    Tooltip
+    ListItemIcon,
+    ListItemText,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import {
-    StorefrontOutlined,
-    Inventory2Outlined,
-    PeopleOutlineOutlined,
-    PointOfSale,
-    ShoppingCartOutlined,
-    PaymentsOutlined,
-    ReceiptOutlined,
-    LocalOfferOutlined,
-    CategoryOutlined,
-    LocalShippingOutlined,
-    NotificationsOutlined,
-    AssessmentOutlined,
-    PersonOutlineOutlined,
-    CardMembershipOutlined,
-    SupportOutlined,
-    Settings,
-    Menu as MenuIcon
+    Inventory2 as InventoryIcon,
+    Assessment as AssessmentIcon,
+    ShoppingCart as SalesIcon,
+    People as CustomersIcon,
+    LocalShipping as SuppliersIcon,
+    PointOfSale as POSIcon,
+    Receipt as ReceiptIcon,
+    LocalOffer as PromotionsIcon,
+    Description as OrdersIcon,
+    Group as UsersIcon,
+    Settings as SettingsIcon,
+    Menu as MenuIcon,
+    Business as BusinessIcon,
+    Logout as LogoutIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.svg';
 
+const menuItems = [
+    {
+        text: 'Inventory',
+        icon: <InventoryIcon />,
+        items: [
+            { text: 'Products', path: '/inventory/products' },
+            { text: 'Stock Management', path: '/inventory/stock' },
+            { text: 'Reorder Management', path: '/inventory/reorder' },
+            { text: 'Reports', path: '/inventory/reports', icon: <AssessmentIcon /> },
+        ]
+    },
+    {
+        text: 'Sales',
+        icon: <SalesIcon />,
+        items: [
+            { text: 'Sales Overview', path: '/sales' },
+            { text: 'Sales History', path: '/sales/history' },
+        ]
+    },
+    {
+        text: 'POS',
+        icon: <POSIcon />,
+        items: [
+            { text: 'Sales Terminal', path: '/pos' },
+            { text: 'Receipts', path: '/pos/receipts', icon: <ReceiptIcon /> },
+            { text: 'Discounts & Promotions', path: '/pos/promotions', icon: <PromotionsIcon /> },
+        ]
+    },
+    {
+        text: 'Orders',
+        icon: <OrdersIcon />,
+        items: [
+            { text: 'Orders List', path: '/orders' },
+            { text: 'Documents', path: '/orders/documents' },
+        ]
+    },
+    {
+        text: 'Customers',
+        icon: <CustomersIcon />,
+        path: '/customers'
+    },
+    {
+        text: 'Suppliers',
+        icon: <SuppliersIcon />,
+        path: '/suppliers'
+    },
+    {
+        text: 'Users',
+        icon: <UsersIcon />,
+        path: '/users'
+    },
+    {
+        text: 'Settings',
+        icon: <SettingsIcon />,
+        path: '/settings'
+    },
+];
+
 const MainHeader = () => {
-    const location = useLocation();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [anchorElNav, setAnchorElNav] = useState(null);
+    const [anchorElUser, setAnchorElUser] = useState(null);
+    const [anchorElSubMenu, setAnchorElSubMenu] = useState(null);
+    const [selectedMainMenu, setSelectedMainMenu] = useState(null);
+    const navigate = useNavigate();
+    const { logout } = useAuth();
 
-    const [posMenu, setPosMenu] = useState(null);
-    const [inventoryMenu, setInventoryMenu] = useState(null);
-    const [crmMenu, setCrmMenu] = useState(null);
-    const [settingsMenu, setSettingsMenu] = useState(null);
+    const handleOpenNavMenu = (event) => {
+        setAnchorElNav(event.currentTarget);
+    };
 
-    // Core navigation items with enhanced structure
-    const coreNavItems = [
-        {
-            label: 'POS',
-            icon: <StorefrontOutlined />,
-            hasSubmenu: true,
-            onClick: (event) => setPosMenu(event.currentTarget),
-            current: location.pathname.startsWith('/pos'),
-            items: [
-                {
-                    label: 'Sales Terminal',
-                    icon: <PointOfSale />,
-                    path: '/pos/sales-terminal'
-                },
-                { 
-                    label: 'Orders',
-                    path: '/orders',
-                    icon: <ShoppingCartOutlined />
-                },
-                { 
-                    label: 'Payments',
-                    path: '/pos/payments',
-                    icon: <PaymentsOutlined />
-                },
-                { 
-                    label: 'Receipts',
-                    path: '/pos/receipts',
-                    icon: <ReceiptOutlined />
-                },
-                { 
-                    label: 'Discounts & Promotions',
-                    path: '/pos/promotions',
-                    icon: <LocalOfferOutlined />
-                }
-            ]
-        },
-        {
-            label: 'Inventory',
-            icon: <Inventory2Outlined />,
-            hasSubmenu: true,
-            onClick: (event) => setInventoryMenu(event.currentTarget),
-            current: location.pathname.startsWith('/inventory')
-        },
-        {
-            label: 'CRM',
-            icon: <PeopleOutlineOutlined />,
-            hasSubmenu: true,
-            onClick: (event) => setCrmMenu(event.currentTarget),
-            current: location.pathname.startsWith('/crm')
-        }
-    ];
+    const handleOpenUserMenu = (event) => {
+        setAnchorElUser(event.currentTarget);
+    };
 
-    // POS submenu items
-    const posItems = [
-        { 
-            label: 'Sales Terminal',
-            path: '/pos/sales-terminal',
-            icon: <PointOfSale />
-        },
-        { 
-            label: 'Orders',
-            path: '/orders',
-            icon: <ShoppingCartOutlined />
-        },
-        { 
-            label: 'Payments',
-            path: '/pos/payments',
-            icon: <PaymentsOutlined />
-        },
-        { 
-            label: 'Receipts',
-            path: '/pos/receipts',
-            icon: <ReceiptOutlined />
-        },
-        { 
-            label: 'Discounts & Promotions',
-            path: '/pos/promotions',
-            icon: <LocalOfferOutlined />
-        }
-    ];
+    const handleOpenSubMenu = (event, menuItem) => {
+        setAnchorElSubMenu(event.currentTarget);
+        setSelectedMainMenu(menuItem);
+    };
 
-    // Inventory submenu items
-    const inventoryItems = [
-        { 
-            label: 'Products',
-            path: '/inventory/products',
-            icon: <CategoryOutlined />
-        },
-        { 
-            label: 'Stock Management',
-            path: '/inventory/stock',
-            icon: <LocalShippingOutlined />
-        },
-        { 
-            label: 'Reorder Management',
-            path: '/inventory/reorder',
-            icon: <NotificationsOutlined />
-        },
-        { 
-            label: 'Suppliers',
-            path: '/inventory/suppliers',
-            icon: <LocalShippingOutlined />
-        },
-        { 
-            label: 'Reports',
-            path: '/inventory/reports',
-            icon: <AssessmentOutlined />
-        }
-    ];
+    const handleCloseNavMenu = () => {
+        setAnchorElNav(null);
+    };
 
-    // CRM submenu items
-    const crmItems = [
-        { 
-            label: 'Customer Profiles',
-            path: '/crm/customers',
-            icon: <PersonOutlineOutlined />
-        },
-        { 
-            label: 'Customer Orders',
-            path: '/orders',
-            icon: <ShoppingCartOutlined />
-        },
-        { 
-            label: 'Loyalty Programs',
-            path: '/crm/loyalty',
-            icon: <CardMembershipOutlined />
-        },
-        { 
-            label: 'Feedback & Support',
-            path: '/crm/feedback',
-            icon: <SupportOutlined />
-        },
-        { 
-            label: 'Reports',
-            path: '/crm/reports',
-            icon: <AssessmentOutlined />
-        }
-    ];
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
 
-    const renderMenu = (items, anchorEl, handleClose) => (
-        <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            PaperProps={{
-                sx: {
-                    mt: 1,
-                    '& .MuiMenuItem-root': {
-                        px: 2,
-                        py: 1,
-                        borderRadius: 1,
-                        '&:hover': {
-                            backgroundColor: theme.palette.action.hover
-                        }
-                    }
-                }
-            }}
-        >
-            {items.map((item) => (
-                <MenuItem
-                    key={item.path}
-                    component={Link}
-                    to={item.path}
-                    onClick={handleClose}
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                    }}
-                >
-                    {item.icon}
-                    <Typography>{item.label}</Typography>
-                </MenuItem>
-            ))}
-        </Menu>
-    );
+    const handleCloseSubMenu = () => {
+        setAnchorElSubMenu(null);
+        setSelectedMainMenu(null);
+    };
+
+    const handleMenuClick = (path) => {
+        navigate(path);
+        handleCloseNavMenu();
+        handleCloseSubMenu();
+    };
+
+    const handleLogout = () => {
+        logout();
+        handleCloseUserMenu();
+    };
 
     return (
-        <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
-            <Toolbar>
-                {isMobile && (
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        sx={{ mr: 2 }}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                )}
-
-                {/* Logo and Title */}
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mr: 4,
-                    textDecoration: 'none',
-                    color: 'inherit'
-                }} 
-                component={Link} 
-                to="/"
-                >
-                    <img
-                        src={logo}
-                        alt="Retail Master"
-                        style={{
-                            height: '40px',
-                            width: 'auto',
-                            marginRight: theme.spacing(2)
+        <AppBar position="static" sx={{ mb: 2 }}>
+            <Container maxWidth="xl">
+                <Toolbar disableGutters sx={{ minHeight: { xs: 80, md: 88 } }}>
+                    {/* Logo and Brand - Desktop */}
+                    <Box 
+                        component="div"
+                        onClick={() => handleMenuClick('/')}
+                        sx={{ 
+                            display: { xs: 'none', md: 'flex' }, 
+                            alignItems: 'center',
+                            mr: 4,
+                            cursor: 'pointer',
+                            '&:hover': {
+                                opacity: 0.9
+                            }
                         }}
-                    />
-                    <Typography variant="h6" component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Retail Master
-                    </Typography>
-                </Box>
+                    >
+                        <img src={logo} alt="RetailMaster Logo" style={{ height: '45px', marginRight: '16px' }} />
+                        <Typography
+                            variant="h5"
+                            noWrap
+                            sx={{
+                                fontWeight: 700,
+                                color: 'inherit',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            RetailMaster
+                        </Typography>
+                    </Box>
 
-                {/* Navigation Items */}
-                {!isMobile && (
-                    <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-                        {coreNavItems.map((item) => (
-                            <Tooltip key={item.label} title={`Access ${item.label} features`}>
-                                <Button
-                                    color="inherit"
-                                    onClick={item.onClick}
-                                    startIcon={item.icon}
-                                    sx={{
-                                        borderBottom: item.current ? '2px solid white' : 'none',
-                                        borderRadius: 1,
-                                        px: 2
+                    {/* Mobile Menu */}
+                    <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
+                        <IconButton
+                            size="large"
+                            aria-label="menu"
+                            aria-controls="menu-appbar"
+                            aria-haspopup="true"
+                            onClick={handleOpenNavMenu}
+                            color="inherit"
+                            sx={{ mr: 2 }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                        <Menu
+                            id="menu-appbar"
+                            anchorEl={anchorElNav}
+                            anchorOrigin={{
+                                vertical: 'bottom',
+                                horizontal: 'left',
+                            }}
+                            keepMounted
+                            transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'left',
+                            }}
+                            open={Boolean(anchorElNav)}
+                            onClose={handleCloseNavMenu}
+                            sx={{
+                                display: { xs: 'block', md: 'none' },
+                                '& .MuiPaper-root': {
+                                    width: '85%',
+                                    maxWidth: '320px',
+                                    mt: 1.5
+                                }
+                            }}
+                        >
+                            {menuItems.map((item) => (
+                                <MenuItem
+                                    key={item.text}
+                                    onClick={item.items ? 
+                                        (event) => handleOpenSubMenu(event, item) :
+                                        () => handleMenuClick(item.path)
+                                    }
+                                    sx={{ py: 1.5 }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 40 }}>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary={item.text}
+                                        primaryTypographyProps={{
+                                            variant: 'body1',
+                                            fontWeight: 500
+                                        }}
+                                    />
+                                </MenuItem>
+                            ))}
+                        </Menu>
+                    </Box>
+
+                    {/* Logo and Brand - Mobile */}
+                    <Box 
+                        component="div"
+                        onClick={() => handleMenuClick('/')}
+                        sx={{ 
+                            display: { xs: 'flex', md: 'none' }, 
+                            alignItems: 'center',
+                            flexGrow: 1,
+                            cursor: 'pointer',
+                            '&:hover': {
+                                opacity: 0.9
+                            }
+                        }}
+                    >
+                        <img src={logo} alt="RetailMaster Logo" style={{ height: '40px', marginRight: '12px' }} />
+                        <Typography
+                            variant="h6"
+                            noWrap
+                            sx={{
+                                fontWeight: 700,
+                                color: 'inherit',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            RetailMaster
+                        </Typography>
+                    </Box>
+
+                    {/* Desktop Menu */}
+                    <Box sx={{ 
+                        flexGrow: 1, 
+                        display: { xs: 'none', md: 'flex' },
+                        justifyContent: 'center',
+                        gap: 3
+                    }}>
+                        {menuItems.map((item) => (
+                            <Box
+                                key={item.text}
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                        '& .MuiIconButton-root': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                        },
+                                        '& .MuiTypography-root': {
+                                            opacity: 1
+                                        }
+                                    }
+                                }}
+                            >
+                                <IconButton
+                                    onClick={item.items ? 
+                                        (event) => handleOpenSubMenu(event, item) :
+                                        () => handleMenuClick(item.path)
+                                    }
+                                    sx={{ 
+                                        color: 'white',
+                                        transition: 'background-color 0.2s',
+                                        p: 1.5
                                     }}
                                 >
-                                    {item.label}
-                                </Button>
-                            </Tooltip>
+                                    {item.icon}
+                                </IconButton>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: 'white',
+                                        opacity: 0.85,
+                                        transition: 'opacity 0.2s',
+                                        fontSize: '0.75rem',
+                                        mt: 0.5
+                                    }}
+                                >
+                                    {item.text}
+                                </Typography>
+                            </Box>
                         ))}
                     </Box>
-                )}
 
-                {/* Right-side items */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton color="inherit">
-                        <Badge badgeContent={4} color="error">
-                            <NotificationsOutlined />
-                        </Badge>
-                    </IconButton>
-                    <IconButton
-                        color="inherit"
-                        onClick={(event) => setSettingsMenu(event.currentTarget)}
+                    {/* Submenu */}
+                    <Menu
+                        anchorEl={anchorElSubMenu}
+                        open={Boolean(anchorElSubMenu)}
+                        onClose={handleCloseSubMenu}
+                        sx={{
+                            '& .MuiPaper-root': {
+                                width: '280px',
+                                mt: 1.5,
+                                boxShadow: 2
+                            }
+                        }}
                     >
-                        <Settings />
-                    </IconButton>
-                </Box>
+                        {selectedMainMenu?.items?.map((subItem) => (
+                            <MenuItem
+                                key={subItem.text}
+                                onClick={() => handleMenuClick(subItem.path)}
+                                sx={{ 
+                                    py: 1.5,
+                                    '&:hover': {
+                                        backgroundColor: 'action.hover'
+                                    }
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                    {subItem.icon || selectedMainMenu.icon}
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary={subItem.text}
+                                    primaryTypographyProps={{
+                                        variant: 'body2',
+                                        fontWeight: 500
+                                    }}
+                                />
+                            </MenuItem>
+                        ))}
+                    </Menu>
 
-                {/* Dropdown Menus */}
-                {renderMenu(posItems, posMenu, () => setPosMenu(null))}
-                {renderMenu(inventoryItems, inventoryMenu, () => setInventoryMenu(null))}
-                {renderMenu(crmItems, crmMenu, () => setCrmMenu(null))}
-            </Toolbar>
+                    {/* User Menu */}
+                    <Box sx={{ ml: { xs: 2, md: 4 } }}>
+                        <Tooltip title="Account settings">
+                            <IconButton 
+                                onClick={handleOpenUserMenu} 
+                                sx={{ 
+                                    p: 0,
+                                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                                    '&:hover': {
+                                        border: '2px solid rgba(255, 255, 255, 0.3)'
+                                    }
+                                }}
+                            >
+                                <Avatar 
+                                    alt="User" 
+                                    sx={{ 
+                                        width: 36, 
+                                        height: 36,
+                                        bgcolor: 'primary.dark'
+                                    }} 
+                                />
+                            </IconButton>
+                        </Tooltip>
+                        <Menu
+                            sx={{
+                                mt: '45px',
+                                '& .MuiPaper-root': {
+                                    width: '220px',
+                                    boxShadow: 2
+                                }
+                            }}
+                            id="menu-appbar"
+                            anchorEl={anchorElUser}
+                            anchorOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                            }}
+                            keepMounted
+                            transformOrigin={{
+                                vertical: 'top',
+                                horizontal: 'right',
+                            }}
+                            open={Boolean(anchorElUser)}
+                            onClose={handleCloseUserMenu}
+                        >
+                            <MenuItem 
+                                onClick={() => handleMenuClick('/profile')}
+                                sx={{ py: 1.5 }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                    <BusinessIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary="Business Profile"
+                                    primaryTypographyProps={{
+                                        variant: 'body2',
+                                        fontWeight: 500
+                                    }}
+                                />
+                            </MenuItem>
+                            <MenuItem 
+                                onClick={handleLogout}
+                                sx={{ py: 1.5 }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                    <LogoutIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText 
+                                    primary="Logout"
+                                    primaryTypographyProps={{
+                                        variant: 'body2',
+                                        fontWeight: 500
+                                    }}
+                                />
+                            </MenuItem>
+                        </Menu>
+                    </Box>
+                </Toolbar>
+            </Container>
         </AppBar>
     );
 };

@@ -6,6 +6,8 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const config = require('./config/config');
 const cookieParser = require('cookie-parser');
+const MongoStore = require('connect-mongo')(session);
+const jwt = require('jsonwebtoken');
 
 const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
@@ -18,6 +20,7 @@ const backupRoutes = require('./routes/backupRoutes');
 const backupService = require('./services/backupService');
 const auditRoutes = require('./routes/auditRoutes');
 const orderRoutes = require('./routes/orders');
+const salesTerminalRoutes = require('./routes/salesTerminal');
 
 const app = express();
 
@@ -45,13 +48,38 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax'
+    },
+    store: new MongoStore({
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/inventory-tracker',
+        ttl: 24 * 60 * 60 // = 24 hours
+    })
 }));
 
 // Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
 app.use(passport.session());
+
+// JWT token verification middleware
+app.use((req, res, next) => {
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-jwt-secret');
+        req.user = decoded;
+        next();
+    } catch (error) {
+        // Clear invalid token
+        res.clearCookie('token');
+        next();
+    }
+});
 
 // Disable caching for all routes in development
 app.use((req, res, next) => {
@@ -106,6 +134,7 @@ app.use('/api/purchase-orders', purchaseOrdersRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/sales-terminal', salesTerminalRoutes);
 
 // Debug middleware for 404s
 app.use((req, res, next) => {

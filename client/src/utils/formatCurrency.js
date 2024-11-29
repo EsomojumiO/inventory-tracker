@@ -19,11 +19,20 @@ export const formatNaira = (amount, showSymbol = true) => {
 };
 
 /**
- * Parse a string with Naira symbol back to number
- * @param {string} str - The string to parse
- * @returns {number} Parsed amount
+ * Parse a Naira string back to a number
+ * @param {string} str - The string to parse (e.g., "₦1,234.56")
+ * @returns {number} The parsed amount
  */
 export const parseNairaString = (str) => {
-  if (typeof str === 'number') return str;
-  return parseFloat(str.replace(/[₦,]/g, ''));
+  return Number(str.replace(/[₦,]/g, ''));
 };
+
+// Default currency settings
+export const DEFAULT_CURRENCY = {
+  code: 'NGN',
+  symbol: '₦',
+  locale: 'en-NG'
+};
+
+// Make formatNaira the default currency formatter
+export const formatCurrency = formatNaira;

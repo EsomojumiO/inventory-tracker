@@ -25,6 +25,7 @@ import 'jspdf-autotable';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import config from '../config/config';
+import { formatCurrency } from '../utils/formatCurrency';
 
 const SalesReport = () => {
   const { getToken } = useAuth();
@@ -86,14 +87,14 @@ const SalesReport = () => {
       doc.setFontSize(12);
       doc.text(`Period: ${reportData.period.start.split('T')[0]} to ${reportData.period.end.split('T')[0]}`, 14, 25);
       doc.text(`Total Sales: ${reportData.summary.totalSales}`, 14, 32);
-      doc.text(`Total Revenue: $${reportData.summary.totalRevenue.toFixed(2)}`, 14, 39);
-      doc.text(`Average Order Value: $${reportData.summary.averageOrderValue.toFixed(2)}`, 14, 46);
+      doc.text(`Total Revenue: ${formatCurrency(reportData.summary.totalRevenue)}`, 14, 39);
+      doc.text(`Average Order Value: ${formatCurrency(reportData.summary.averageOrderValue)}`, 14, 46);
 
       // Sales by Category
       const categoryData = Object.entries(reportData.salesByCategory).map(([category, data]) => [
         category,
         data.count,
-        `$${data.revenue.toFixed(2)}`
+        formatCurrency(data.revenue)
       ]);
 
       doc.autoTable({
@@ -107,7 +108,7 @@ const SalesReport = () => {
       const dailyData = Object.entries(reportData.salesByDay).map(([date, data]) => [
         date,
         data.count,
-        `$${data.revenue.toFixed(2)}`
+        formatCurrency(data.revenue)
       ]);
 
       doc.autoTable({
