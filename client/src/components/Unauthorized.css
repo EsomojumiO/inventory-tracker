@@ -1,0 +1,94 @@
+.unauthorized-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f9fafb;
+  padding: 20px;
+}
+
+.unauthorized-content {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.unauthorized-content h1 {
+  margin: 0 0 16px;
+  color: #1f2937;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.unauthorized-content p {
+  color: #4b5563;
+  margin: 0 0 24px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.unauthorized-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.back-button,
+.home-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.back-button:hover {
+  background: #e5e7eb;
+}
+
+.home-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+}
+
+.home-button:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 480px) {
+  .unauthorized-content {
+    padding: 24px;
+  }
+
+  .unauthorized-content h1 {
+    font-size: 24px;
+  }
+
+  .unauthorized-content p {
+    font-size: 14px;
+  }
+
+  .unauthorized-actions {
+    flex-direction: column;
+  }
+
+  .back-button,
+  .home-button {
+    width: 100%;
+  }
+}

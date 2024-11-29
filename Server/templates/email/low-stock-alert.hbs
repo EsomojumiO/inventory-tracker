@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .alert { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .details { margin-bottom: 30px; }
+        .supplier-info { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .action-needed { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Low Stock Alert</h2>
+        </div>
+
+        <div class="alert">
+            <h3>⚠️ Low Stock Detected</h3>
+            <p>The following item has reached its low stock threshold:</p>
+        </div>
+
+        <div class="details">
+            <p><strong>Product Name:</strong> {{productName}}</p>
+            <p><strong>SKU:</strong> {{sku}}</p>
+            <p><strong>Current Stock:</strong> {{currentStock}} units</p>
+            <p><strong>Low Stock Threshold:</strong> {{threshold}} units</p>
+        </div>
+
+        <div class="supplier-info">
+            <h3>Supplier Information</h3>
+            <p><strong>Supplier:</strong> {{supplier.name}}</p>
+            <p><strong>Contact:</strong> {{supplier.contact}}</p>
+        </div>
+
+        <div class="action-needed">
+            <h3>Recommended Action</h3>
+            <p><strong>Reorder Point:</strong> {{reorderPoint}} units</p>
+            <p><strong>Suggested Reorder Quantity:</strong> {{reorderQuantity}} units</p>
+            <p>Please review and initiate a purchase order if necessary.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .reminder { 
+            background-color: #cce5ff;
+            border: 1px solid #b8daff;
+            color: #004085;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .items-table { 
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        .items-table th { background-color: #e9ecef; }
+        .pending { color: #856404; background-color: #fff3cd; }
+        .footer { text-align: center; margin-top: 40px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Delivery Reminder</h2>
+            <p>PO Number: {{poNumber}}</p>
+        </div>
+
+        <div class="reminder">
+            <h3>📅 Delivery Due Soon</h3>
+            <p>Dear {{supplierName}},</p>
+            <p>This is a friendly reminder that the delivery for Purchase Order {{poNumber}} is due in {{daysUntilDelivery}} days.</p>
+            <p><strong>Expected Delivery Date:</strong> {{expectedDeliveryDate}}</p>
+        </div>
+
+        <h3>Pending Items</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Total Quantity</th>
+                    <th>Received</th>
+                    <th>Remaining</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                {{#if remainingQuantity}}
+                <tr class="{{#if remainingQuantity}}pending{{/if}}">
+                    <td>{{name}}</td>
+                    <td>{{quantity}}</td>
+                    <td>{{receivedQuantity}}</td>
+                    <td>{{remainingQuantity}}</td>
+                </tr>
+                {{/if}}
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>Please ensure timely delivery of the remaining items.</p>
+            <p>If you anticipate any delays, please contact us immediately.</p>
+        </div>
+    </div>
+</body>
+</html>

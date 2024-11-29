@@ -1,0 +1,256 @@
+.dashboard {
+  padding: 24px;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 64px);
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.metric-card h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  letter-spacing: 0.025em;
+}
+
+.metric-card p {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.metric-icon {
+  color: #6b7280;
+  font-size: 1.25rem;
+  background-color: rgba(25, 118, 210, 0.1) !important;
+  color: #1976d2 !important;
+}
+
+.value-metric .metric-icon {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+  color: #4caf50 !important;
+}
+
+.revenue-metric .metric-icon {
+  background-color: rgba(33, 150, 243, 0.1) !important;
+  color: #2196f3 !important;
+}
+
+.products-metric .metric-icon {
+  background-color: rgba(156, 39, 176, 0.1) !important;
+  color: #9c27b0 !important;
+}
+
+.alert-metric .metric-icon {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+  color: #f44336 !important;
+}
+
+/* Specific metric card styles */
+.total-value {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left: 4px solid #3b82f6;
+}
+
+.total-value p {
+  color: #1e40af;
+}
+
+.total-sales {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border-left: 4px solid #22c55e;
+}
+
+.total-sales p {
+  color: #166534;
+}
+
+.low-stock {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+  border-left: 4px solid #f97316;
+}
+
+.low-stock p {
+  color: #9a3412;
+}
+
+.out-of-stock {
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  border-left: 4px solid #ef4444;
+}
+
+.out-of-stock p {
+  color: #991b1b;
+}
+
+/* Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.chart-card h3 {
+  margin: 0 0 24px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Recent Items Section */
+.recent-items-card {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.recent-items-card h3 {
+  margin: 0 0 24px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.recent-items-list {
+  display: grid;
+  gap: 16px;
+}
+
+.recent-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.recent-item:hover {
+  background-color: #f3f4f6;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.item-category {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.item-quantity {
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.item-price {
+  font-weight: 500;
+  color: #111827;
+  text-align: right;
+}
+
+.section-card {
+  height: 100%;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Error Message Styling */
+.error-message {
+  display: flex;
+  align-items: center;
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 16px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recent-item {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .item-category {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard {
+    padding: 16px;
+  }
+  
+  .metric-card {
+    margin-bottom: 16px;
+  }
+}

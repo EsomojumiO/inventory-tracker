@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .confirmation {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .order-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        .items-table th { background-color: #e9ecef; }
+        .totals {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .shipping {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .footer { text-align: center; margin-top: 40px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Order Confirmation</h2>
+            <p>PO Number: {{poNumber}}</p>
+        </div>
+
+        <div class="confirmation">
+            <h3>✅ Order Confirmed</h3>
+            <p>Dear {{supplierName}},</p>
+            <p>We are pleased to confirm your order with the following details:</p>
+        </div>
+
+        <div class="order-details">
+            <p><strong>Order Date:</strong> {{orderDate}}</p>
+            <p><strong>Expected Delivery Date:</strong> {{expectedDeliveryDate}}</p>
+        </div>
+
+        <h3>Order Items</h3>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>{{quantity}}</td>
+                    <td>₦{{unitPrice}}</td>
+                    <td>₦{{total}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <h3>Order Totals</h3>
+            <p><strong>Subtotal:</strong> ₦{{totals.subtotal}}</p>
+            {{#if totals.tax}}
+            <p><strong>Tax:</strong> ₦{{totals.tax}}</p>
+            {{/if}}
+            {{#if totals.discount}}
+            <p><strong>Discount:</strong> ₦{{totals.discount}}</p>
+            {{/if}}
+            <p><strong>Total Amount:</strong> ₦{{totals.total}}</p>
+        </div>
+
+        <div class="shipping">
+            <h3>Shipping Address</h3>
+            <p>{{shippingAddress.street}}</p>
+            <p>{{shippingAddress.city}}, {{shippingAddress.state}}</p>
+            <p>{{shippingAddress.country}}</p>
+            <p>{{shippingAddress.postalCode}}</p>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>If you have any questions about this order, please don't hesitate to contact us.</p>
+        </div>
+    </div>
+</body>
+</html>

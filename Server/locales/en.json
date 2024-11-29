@@ -1,0 +1,35 @@
+{
+    "delivery": {
+        "tracking": {
+            "title": "Delivery Tracking",
+            "number": "Tracking Number",
+            "error": "Error loading tracking information",
+            "noInfo": "No tracking information available"
+        },
+        "status": {
+            "shipped": "Shipped",
+            "inTransit": "In Transit",
+            "outForDelivery": "Out for Delivery",
+            "delivered": "Delivered",
+            "exception": "Exception"
+        },
+        "estimatedDelivery": "Estimated Delivery"
+    },
+    "currency": {
+        "select": "Select Currency",
+        "conversion": {
+            "error": "Error converting currency",
+            "success": "Currency converted successfully"
+        }
+    },
+    "language": {
+        "select": "Select Language",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
+        "ja": "Japanese",
+        "zh": "Chinese"
+    }
+}

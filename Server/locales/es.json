@@ -1,0 +1,35 @@
+{
+    "delivery": {
+        "tracking": {
+            "title": "Seguimiento de Entrega",
+            "number": "Número de Seguimiento",
+            "error": "Error al cargar la información de seguimiento",
+            "noInfo": "No hay información de seguimiento disponible"
+        },
+        "status": {
+            "shipped": "Enviado",
+            "inTransit": "En Tránsito",
+            "outForDelivery": "En Reparto",
+            "delivered": "Entregado",
+            "exception": "Excepción"
+        },
+        "estimatedDelivery": "Entrega Estimada"
+    },
+    "currency": {
+        "select": "Seleccionar Moneda",
+        "conversion": {
+            "error": "Error al convertir la moneda",
+            "success": "Moneda convertida exitosamente"
+        }
+    },
+    "language": {
+        "select": "Seleccionar Idioma",
+        "en": "Inglés",
+        "es": "Español",
+        "fr": "Francés",
+        "de": "Alemán",
+        "it": "Italiano",
+        "ja": "Japonés",
+        "zh": "Chino"
+    }
+}

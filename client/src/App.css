@@ -1,38 +1,99 @@
 /* General styling for the app */
+:root {
+  --main-color: #29372f;
+  --accent-color: #c55a3d;
+  --background-color: #ece8de;
+  --success-color: #28a745;
+  --white: #ffffff;
+  --text-color: #29372f;
+  --border-color: rgba(41, 55, 47, 0.2);
+  --hover-transition: all 0.3s ease;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #ffffff;
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: var(--background-color);
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  color: var(--text-color);
 }
 
 .App {
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-h1 {
-  font-size: 2rem;
-  color: #333;
+/* Header Styles */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: var(--main-color);
+  color: var(--white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Button Styles */
+.button-base {
+  padding: 8px 16px;
+  background-color: var(--main-color);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--hover-transition);
+}
+
+.button-base:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.toggle-report-btn,
+.toggle-dashboard-btn,
+.report-toggle-btn,
+.add-new-btn {
+  composes: button-base;
+}
+
+/* Inventory Section */
+.inventory-section {
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--main-color);
   margin-bottom: 20px;
 }
 
-/* Styling for the error messages */
+/* Error Messages */
 .error {
-  color: red;
-  font-size: 1rem;
-  margin-top: 10px;
+  color: var(--accent-color);
+  margin: 10px 0;
+  font-size: 0.875rem;
 }
 
-/* Items list table */
+/* Table Styles */
 .items-list {
-  flex: 1;
   padding: 20px;
-  background-color: #fff;
+  background-color: var(--white);
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
 }
 
 .items-list table {
@@ -45,115 +106,246 @@ h1 {
 .items-list table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .items-list table th {
-  background-color: #c25c3e;
-  color: white;
-  font-size: 1rem;
+  background-color: var(--main-color);
+  color: var(--white);
+  font-weight: 500;
 }
 
-.items-list table td {
-  font-size: 0.9rem;
-  color: #555;
+.items-list table tr:hover {
+  background-color: rgba(236, 232, 222, 0.5);
 }
 
-/* Add item form */
+/* Form Styles */
 .add-item-form {
-  width: 300px;
+  margin-top: 30px;
   padding: 20px;
-  background-color: #fff;
+  background-color: var(--white);
   border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.add-item-form h2 {
-  margin-top: 0;
-  font-size: 1.5rem;
-  color: #333;
+.add-item-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.add-item-form form div {
-  margin-bottom: 10px;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
 }
 
-.add-item-form input,
-.add-item-form textarea {
-  width: 100%;
-  padding: 8px;
-  font-size: 0.9rem;
-  margin-top: 5px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
+.form-group label {
+  color: var(--main-color);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
+  transition: var(--hover-transition);
 }
 
-.add-item-form button {
-  width: 100%;
-  padding: 10px;
-  background-color: #c25c3e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  margin-top: 10px;
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(197, 90, 61, 0.2);
 }
 
-.add-item-form button:hover {
-  background-color: #c25c3e;
-}
-
-/* Button styling */
-button {
-  padding: 10px 15px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  border-radius: 4px;
-}
-
-button:hover {
-  background-color: #1976d2;
-}
-
+/* Search and Filter */
 .search-filter {
   display: flex;
-  justify-content: flex-end;
   gap: 10px;
   margin-bottom: 20px;
+  align-items: center;
 }
 
 .search-filter input,
 .search-filter select {
-  margin-left: 10px;
-  padding: 5px;
-  font-size: 14px;
-  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
+  transition: var(--hover-transition);
+}
+
+.search-filter input:focus,
+.search-filter select:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(197, 90, 61, 0.2);
+}
+
+/* Status and State Styles */
+.success {
+  color: var(--success-color);
 }
 
 .selected {
-  background-color: #f0f8ff;
+  background-color: rgba(197, 90, 61, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .App {
+    padding: 10px;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .search-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .items-list {
+    overflow-x: auto;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Action buttons styling */
+td button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+td button:first-child {
+  background-color: var(--main-color);
+  color: var(--white);
 }
 
-table th,
-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+td button:last-child {
+  background-color: var(--accent-color);
+  color: var(--white);
 }
 
-table th {
-  background-color: #f4f4f4;
+td button:hover {
+  opacity: 0.8;
+}
+
+/* Stock level indicators */
+.out-of-stock {
+  background-color: #ffebee !important;
+}
+
+.out-of-stock td {
+  color: #c62828;
+}
+
+.low-stock {
+  background-color: #fff3e0 !important;
+}
+
+.low-stock td {
+  color: #ef6c00;
+}
+
+/* Stock level indicators in table */
+tr[style*="ffebee"] td {
+  color: #d32f2f;
+}
+
+tr[style*="fff3e0"] td {
+  color: #ef6c00;
+}
+
+/* Disable sale button when out of stock */
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Stock level column styling */
+td:nth-child(3) {
+  font-weight: bold;
+}
+
+/* Sales count column styling */
+td:nth-child(4) {
+  color: var(--success-color);
+  font-weight: bold;
+}
+
+/* Authentication-related components and messages */
+.logout-btn {
+  padding: 8px 16px;
+  background-color: #ef4444;
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #dc2626;
+}
+
+/* Hide action buttons for non-admin/manager users */
+.viewer-role .action-buttons {
+  display: none;
+}
+
+/* Style disabled buttons for unauthorized actions */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading state for async actions */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Error messages */
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Success messages */
+.success-message {
+  background-color: #dcfce7;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
 }

@@ -1,186 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { createAppTheme } from './theme';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en-gb'; // Import the locale you want to use
 
-const App = () => {
-  const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]); // Filtered items to display
-  const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    quantity: 0,
-    price: 0,
-    description: ''
-  });
-  const [editingItem, setEditingItem] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(''); // For search input
-  const [filterCategory, setFilterCategory] = useState(''); // For category filter
-  const [error, setError] = useState(null);
+// Context Providers
+import { AuthProvider } from './hooks/useAuth';
+import { NotificationProvider } from './hooks/useNotification';
+import { InventoryProvider } from './context/InventoryContext';
+import { SnackbarProvider } from 'notistack';
+import { SalesProvider } from './context/SalesContext';
+import { CustomerProvider } from './context/CustomerContext';
+import { PaymentProvider } from './context/PaymentContext';
+import { SupplierProvider } from './context/SupplierContext';
+import { ReportProvider } from './context/ReportContext';
+import { ReceiptProvider } from './context/ReceiptContext';
+import { CurrencyProvider } from './context/CurrencyContext';
+import { CashProvider } from './context/CashContext';
+import { PromotionsProvider } from './context/PromotionsContext';
 
-  // Fetch items from the backend API
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/items');
-        const data = await response.json();
-        setItems(data);
-        setFilteredItems(data); // Initialize filtered items
-      } catch (err) {
-        setError('Error fetching items');
-      }
-    };
+// Components
+import MainLayout from './components/layout/MainLayout';
+import Login from './components/auth/Login';
+import SignUp from './components/auth/SignUp';
+import ForgotPassword from './components/auth/ForgotPassword';
+import Dashboard from './components/analytics/Dashboard';
+import InventoryManager from './components/inventory/InventoryManager';
+import StockManagement from './components/inventory/StockManagement';
+import ReorderManagement from './components/inventory/reorder/ReorderManagement';
+import SalesPage from './components/sales/SalesPage';
+import SalesHistory from './components/sales/SalesHistory';
+import POSManager from './components/pos/POSManager';
+import OrdersPage from './components/orders/OrdersPage';
+import CustomersPage from './components/customer/CustomersPage';
+import SupplierManagement from './components/supplier/SupplierManagement';
+import UserManagement from './components/users/UserManagement';
+import SettingsPage from './components/settings/SettingsPage';
+import Profile from './components/profile/BusinessProfile';
+import DocumentsPage from './components/orders/DocumentsPage';
+import NotFound from './components/NotFound';
+import Notification from './components/Notification';
+import PrivateRoute from './components/auth/PrivateRoute';
+import PublicRoute from './components/auth/PublicRoute';
+import InventoryReports from './components/inventory/reports/InventoryReports';
+import ReceiptsPage from './components/pos/receipts/ReceiptsPage';
+import MainDashboard from './components/dashboard/MainDashboard';
+import SalesTerminal from './components/pos/sales/SalesTerminal';
+import CashManagement from './components/pos/cash/CashManagement';
+import PromotionsManager from './components/pos/promotions/PromotionsManager';
 
-    fetchItems();
-  }, []);
-
-  // Update filtered items whenever search or filter inputs change
-  useEffect(() => {
-    const lowercasedQuery = searchQuery.toLowerCase();
-    const filtered = items.filter((item) => {
-      const matchesName = item.name.toLowerCase().includes(lowercasedQuery);
-      const matchesCategory = filterCategory ? item.category === filterCategory : true;
-      return matchesName && matchesCategory;
-    });
-    setFilteredItems(filtered);
-  }, [searchQuery, filterCategory, items]);
-
-  // Handle input changes in the form
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  // Handle search input
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  // Handle category filter input
-  const handleFilterChange = (e) => {
-    setFilterCategory(e.target.value);
-  };
+function App() {
+  const theme = createAppTheme('light');
 
   return (
-    <div className="App">
-      <div className="items-list">
-        <h1>Digitplus Inventory</h1>
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <CssBaseline />
+        <SnackbarProvider maxSnack={3}>
+          <AuthProvider>
+            <NotificationProvider>
+              <InventoryProvider>
+                <SupplierProvider>
+                  <PaymentProvider>
+                    <CustomerProvider>
+                      <SalesProvider>
+                        <ReportProvider>
+                          <CurrencyProvider>
+                            <CashProvider>
+                              <PromotionsProvider>
+                                <ReceiptProvider>
+                                  <Router>
+                                    <Notification />
+                                    <Routes>
+                                      {/* Public Routes */}
+                                      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                                      <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+                                      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
-        {/* Error message */}
-        {error && <p className="error">{error}</p>}
+                                      {/* Private Routes */}
+                                      <Route path="/" element={
+                                        <PrivateRoute>
+                                          <MainLayout />
+                                        </PrivateRoute>
+                                      }>
+                                        <Route index element={<MainDashboard />} />
+                                        <Route path="inventory">
+                                          <Route index element={<Navigate to="products" />} />
+                                          <Route path="products" element={<InventoryManager />} />
+                                          <Route path="stock" element={<StockManagement />} />
+                                          <Route path="reorder" element={<ReorderManagement />} />
+                                          <Route path="supplier" element={<SupplierManagement />} />
+                                          <Route path="reports" element={<InventoryReports />} />
+                                        </Route>
+                                        <Route path="sales" element={<SalesPage />} />
+                                        <Route path="sales/history" element={<SalesHistory />} />
+                                        <Route path="pos">
+                                          <Route index element={<POSManager />} />
+                                          <Route path="sales-terminal" element={<SalesTerminal />} />
+                                          <Route path="cash" element={<CashManagement />} />
+                                          <Route path="receipts" element={<ReceiptsPage />} />
+                                          <Route path="promotions" element={<PrivateRoute><PromotionsManager /></PrivateRoute>} />
+                                        </Route>
+                                        <Route path="orders" element={<OrdersPage />} />
+                                        <Route path="orders/documents" element={<DocumentsPage />} />
+                                        <Route path="customers" element={<CustomersPage />} />
+                                        <Route path="suppliers" element={<SupplierManagement />} />
+                                        <Route path="users" element={<UserManagement />} />
+                                        <Route path="settings" element={<SettingsPage />} />
+                                        <Route path="profile" element={<Profile />} />
+                                      </Route>
 
-        {/* Search and Filter */}
-        <div className="search-filter">
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
-          <select value={filterCategory} onChange={handleFilterChange}>
-            <option value="">All Categories</option>
-            {Array.from(new Set(items.map((item) => item.category))).map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Display filtered items in a table */}
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Quantity</th>
-              <th>Price</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item) => (
-                <tr
-                  key={item._id}
-                  onClick={() => setSelectedItem(item)}
-                  className={selectedItem && selectedItem._id === item._id ? 'selected' : ''}
-                >
-                  <td>{item.name}</td>
-                  <td>{item.category}</td>
-                  <td>{item.quantity}</td>
-                  <td>₦{item.price}</td>
-                  <td>{item.description}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5">No items match your search</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Add New Item Form */}
-      <div className="add-item-form">
-        <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
-        <form>
-          <div>
-            <label>Name:</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Category:</label>
-            <input
-              type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Quantity:</label>
-            <input
-              type="number"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Price:</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label>Description:</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            ></textarea>
-          </div>
-          <button type="submit">{editingItem ? 'Update Item' : 'Add Item'}</button>
-        </form>
-      </div>
-    </div>
+                                      {/* 404 Route */}
+                                      <Route path="*" element={<NotFound />} />
+                                    </Routes>
+                                  </Router>
+                                </ReceiptProvider>
+                              </PromotionsProvider>
+                            </CashProvider>
+                          </CurrencyProvider>
+                        </ReportProvider>
+                      </SalesProvider>
+                    </CustomerProvider>
+                  </PaymentProvider>
+                </SupplierProvider>
+              </InventoryProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </SnackbarProvider>
+      </LocalizationProvider>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;
