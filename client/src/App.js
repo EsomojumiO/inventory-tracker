@@ -22,6 +22,7 @@ import { ReceiptProvider } from './context/ReceiptContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { CashProvider } from './context/CashContext';
 import { PromotionsProvider } from './context/PromotionsContext';
+import { AccountingProvider } from './context/AccountingContext';
 
 // Components
 import MainLayout from './components/layout/MainLayout';
@@ -52,6 +53,7 @@ import MainDashboard from './components/dashboard/MainDashboard';
 import SalesTerminal from './components/pos/sales/SalesTerminal';
 import CashManagement from './components/pos/cash/CashManagement';
 import PromotionsManager from './components/pos/promotions/PromotionsManager';
+import AccountingDashboard from './components/accounting/AccountingDashboard';
 
 function App() {
   const theme = createAppTheme('light');
@@ -73,51 +75,54 @@ function App() {
                             <CashProvider>
                               <PromotionsProvider>
                                 <ReceiptProvider>
-                                  <Router>
-                                    <Notification />
-                                    <Routes>
-                                      {/* Public Routes */}
-                                      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                                      <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
-                                      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                                  <AccountingProvider>
+                                    <Router>
+                                      <Notification />
+                                      <Routes>
+                                        {/* Public Routes */}
+                                        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                                        <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+                                        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
-                                      {/* Private Routes */}
-                                      <Route path="/" element={
-                                        <PrivateRoute>
-                                          <MainLayout />
-                                        </PrivateRoute>
-                                      }>
-                                        <Route index element={<MainDashboard />} />
-                                        <Route path="inventory">
-                                          <Route index element={<Navigate to="products" />} />
-                                          <Route path="products" element={<InventoryManager />} />
-                                          <Route path="stock" element={<StockManagement />} />
-                                          <Route path="reorder" element={<ReorderManagement />} />
-                                          <Route path="supplier" element={<SupplierManagement />} />
-                                          <Route path="reports" element={<InventoryReports />} />
+                                        {/* Private Routes */}
+                                        <Route path="/" element={
+                                          <PrivateRoute>
+                                            <MainLayout />
+                                          </PrivateRoute>
+                                        }>
+                                          <Route index element={<MainDashboard />} />
+                                          <Route path="inventory">
+                                            <Route index element={<Navigate to="products" />} />
+                                            <Route path="products" element={<InventoryManager />} />
+                                            <Route path="stock" element={<StockManagement />} />
+                                            <Route path="reorder" element={<ReorderManagement />} />
+                                            <Route path="supplier" element={<SupplierManagement />} />
+                                            <Route path="reports" element={<InventoryReports />} />
+                                          </Route>
+                                          <Route path="sales" element={<SalesPage />} />
+                                          <Route path="sales/history" element={<SalesHistory />} />
+                                          <Route path="pos">
+                                            <Route index element={<POSManager />} />
+                                            <Route path="sales-terminal" element={<SalesTerminal />} />
+                                            <Route path="cash" element={<CashManagement />} />
+                                            <Route path="receipts" element={<ReceiptsPage />} />
+                                            <Route path="promotions" element={<PrivateRoute><PromotionsManager /></PrivateRoute>} />
+                                          </Route>
+                                          <Route path="orders" element={<OrdersPage />} />
+                                          <Route path="orders/documents" element={<DocumentsPage />} />
+                                          <Route path="customers" element={<CustomersPage />} />
+                                          <Route path="suppliers" element={<SupplierManagement />} />
+                                          <Route path="users" element={<UserManagement />} />
+                                          <Route path="settings" element={<SettingsPage />} />
+                                          <Route path="profile" element={<Profile />} />
+                                          <Route path="accounting" element={<AccountingDashboard />} />
                                         </Route>
-                                        <Route path="sales" element={<SalesPage />} />
-                                        <Route path="sales/history" element={<SalesHistory />} />
-                                        <Route path="pos">
-                                          <Route index element={<POSManager />} />
-                                          <Route path="sales-terminal" element={<SalesTerminal />} />
-                                          <Route path="cash" element={<CashManagement />} />
-                                          <Route path="receipts" element={<ReceiptsPage />} />
-                                          <Route path="promotions" element={<PrivateRoute><PromotionsManager /></PrivateRoute>} />
-                                        </Route>
-                                        <Route path="orders" element={<OrdersPage />} />
-                                        <Route path="orders/documents" element={<DocumentsPage />} />
-                                        <Route path="customers" element={<CustomersPage />} />
-                                        <Route path="suppliers" element={<SupplierManagement />} />
-                                        <Route path="users" element={<UserManagement />} />
-                                        <Route path="settings" element={<SettingsPage />} />
-                                        <Route path="profile" element={<Profile />} />
-                                      </Route>
 
-                                      {/* 404 Route */}
-                                      <Route path="*" element={<NotFound />} />
-                                    </Routes>
-                                  </Router>
+                                        {/* 404 Route */}
+                                        <Route path="*" element={<NotFound />} />
+                                      </Routes>
+                                    </Router>
+                                  </AccountingProvider>
                                 </ReceiptProvider>
                               </PromotionsProvider>
                             </CashProvider>

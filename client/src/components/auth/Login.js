@@ -42,18 +42,26 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Validate inputs
+    if (!formData.username || !formData.password) {
+      setError('Username and password are required');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      const result = await login(formData);
-      if (result.success) {
-        const from = location.state?.from?.pathname || '/';
-        navigate(from);
-      } else {
-        setError(result.error || 'Login failed');
-      }
+      await login({
+        username: formData.username,
+        password: formData.password
+      });
+      
+      // If login is successful, navigate
+      const from = location.state?.from?.pathname || '/';
+      navigate(from);
     } catch (err) {
-      setError(err.message || 'An error occurred during login');
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -88,15 +96,23 @@ const Login = () => {
             gap: 4
           }}
         >
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box 
+            sx={{ 
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              mb: 4
+            }}
+          >
             <img 
               src={logo} 
               alt="RETAIL MASTER" 
               style={{ 
-                maxWidth: '300px',
+                maxWidth: '240px',
                 width: '100%',
                 height: 'auto',
-                marginBottom: '1rem'
+                margin: '0 auto'
               }} 
             />
           </Box>

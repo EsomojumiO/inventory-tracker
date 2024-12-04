@@ -20,9 +20,9 @@ import {
 import { useReceipt } from '../../../context/ReceiptContext';
 
 const ReceiptViewer = ({ open, onClose, receipt }) => {
-  if (!receipt) return null;
-
   const { RECEIPT_STATUS } = useReceipt();
+
+  if (!receipt) return null;
 
   return (
     <Dialog

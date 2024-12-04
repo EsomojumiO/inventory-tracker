@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User, ROLES } = require('../models/User');
 const PasswordReset = require('../models/PasswordReset');
@@ -30,7 +31,7 @@ const generateToken = (user) => {
             id: user._id,
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role || 'user'
         },
         SECRET_KEY,
         { expiresIn: '24h' }
@@ -48,7 +49,62 @@ const setTokenCookie = (res, token) => {
     });
 };
 
-// Register a new user
+// Login route
+router.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Validate input
+        if (!username || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Username and password are required' 
+            });
+        }
+
+        // Find user
+        const user = await User.findOne({ username }).select('+password');
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid username or password' 
+            });
+        }
+
+        // Verify password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Invalid username or password' 
+            });
+        }
+
+        // Generate token
+        const token = generateToken(user);
+
+        // Send response
+        res.json({
+            success: true,
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error during login' 
+        });
+    }
+});
+
+// Register route
 router.post('/register', async (req, res) => {
     try {
         const { 
@@ -61,13 +117,10 @@ router.post('/register', async (req, res) => {
             businessName
         } = req.body;
 
-        // Set content type
-        res.setHeader('Content-Type', 'application/json');
-        
-        // Validate required fields
-        if (!username || !email || !password || !firstName || !lastName || !phone || !businessName) {
+        // Validate input
+        if (!username || !password || !email || !firstName || !lastName || !phone || !businessName) {
             return res.status(400).json({ 
-                success: false,
+                success: false, 
                 message: 'All fields are required' 
             });
         }
@@ -122,66 +175,54 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        // Check for existing username
-        const existingUsername = await User.findOne({ username });
-        if (existingUsername) {
+        // Check if user exists
+        let user = await User.findOne({ $or: [{ username }, { email }] });
+        if (user) {
             return res.status(400).json({ 
-                success: false,
-                message: 'Username already exists' 
-            });
-        }
-
-        // Check for existing email
-        const existingEmail = await User.findOne({ email });
-        if (existingEmail) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Email already registered' 
+                success: false, 
+                message: 'Username or email already exists' 
             });
         }
 
         // Create new user
-        const newUser = new User({ 
+        user = new User({
             username,
-            email,
             password,
+            email,
             firstName,
             lastName,
             phone,
             businessName,
             role: 'user'
         });
-        
-        await newUser.save();
-        
-        res.status(201).json({ 
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+
+        // Save user
+        await user.save();
+
+        // Generate token
+        const token = generateToken(user);
+
+        // Send response
+        res.status(201).json({
             success: true,
-            message: 'User registered successfully'
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
         });
+
     } catch (error) {
         console.error('Registration error:', error);
-        
-        // Handle duplicate key errors
-        if (error.code === 11000) {
-            const field = Object.keys(error.keyPattern)[0];
-            return res.status(400).json({
-                success: false,
-                message: `${field} already exists`
-            });
-        }
-        
-        // Handle validation errors
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({
-                success: false,
-                message: Object.values(error.errors).map(err => err.message).join(', ')
-            });
-        }
-        
-        // Handle other errors
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during registration'
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error during registration' 
         });
     }
 });
@@ -210,66 +251,6 @@ const authenticateToken = (req, res, next) => {
         });
     }
 };
-
-// Login user
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Username and password are required'
-            });
-        }
-
-        // Find user
-        const user = await User.findOne({ username }).select('+password');
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid username or password'
-            });
-        }
-
-        // Check password
-        const isValidPassword = await user.comparePassword(password);
-        if (!isValidPassword) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid username or password'
-            });
-        }
-
-        // Generate token and set cookie
-        const token = generateToken(user);
-        setTokenCookie(res, token);
-
-        // Return user data without password
-        const userData = {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            businessName: user.businessName
-        };
-
-        // Return success response
-        res.json({
-            success: true,
-            message: 'Login successful',
-            token,
-            user: userData
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred during login. Please try again.'
-        });
-    }
-});
 
 // Logout
 router.post('/logout', (req, res) => {

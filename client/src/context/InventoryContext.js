@@ -57,9 +57,13 @@ const InventoryProvider = ({ children }) => {
       const product = inventory.find(p => p.id === sale.productId);
       if (product && product.quantity >= sale.quantity) {
         // Update inventory
-        updateItem(sale.productId, {
-          quantity: product.quantity - sale.quantity
-        });
+        setInventory(prev =>
+          prev.map(item =>
+            item.id === sale.productId
+              ? { ...item, quantity: item.quantity - sale.quantity }
+              : item
+          )
+        );
         
         // Add sale record
         setSales([...sales, {

@@ -29,6 +29,7 @@ import {
     Menu as MenuIcon,
     Business as BusinessIcon,
     Logout as LogoutIcon,
+    AccountBalance as AccountingIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import logo from '../../assets/logo.svg';
@@ -68,6 +69,11 @@ const menuItems = [
             { text: 'Orders List', path: '/orders' },
             { text: 'Documents', path: '/orders/documents' },
         ]
+    },
+    {
+        text: 'Accounting',
+        icon: <AccountingIcon />,
+        path: '/accounting'
     },
     {
         text: 'Customers',

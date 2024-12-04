@@ -193,21 +193,18 @@ const SignUp = () => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              mb: 4,
-              textAlign: 'center'
+              mb: 4
             }}
           >
-            <Box
-              component="img"
+            <img 
               src={logo} 
-              alt="Logo" 
-              sx={{
+              alt="RETAIL MASTER" 
+              style={{ 
+                maxWidth: '240px',
+                width: '100%',
                 height: 'auto',
-                width: '80%',
-                maxWidth: '300px',
-                marginX: 'auto',
-                display: 'block'
-              }}
+                margin: '0 auto'
+              }} 
             />
           </Box>
           <Typography component="h1" variant="h5" sx={{ mb: 3, textAlign: 'center' }}>

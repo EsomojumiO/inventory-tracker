@@ -1,5 +1,5 @@
 const config = {
-    apiUrl: process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
+    apiUrl: process.env.REACT_APP_API_URL || 'http://localhost:5001',
     tokenKey: 'inventory_tracker_token',
     refreshTokenKey: 'inventory_tracker_refresh_token',
     defaultHeaders: {

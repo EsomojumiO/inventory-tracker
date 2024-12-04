@@ -21,6 +21,7 @@ const backupService = require('./services/backupService');
 const auditRoutes = require('./routes/auditRoutes');
 const orderRoutes = require('./routes/orders');
 const salesTerminalRoutes = require('./routes/salesTerminal');
+const accountingRoutes = require('./routes/accounting');
 
 const app = express();
 
@@ -135,6 +136,7 @@ app.use('/api/backups', backupRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/sales-terminal', salesTerminalRoutes);
+app.use('/api/accounting', accountingRoutes);
 
 // Debug middleware for 404s
 app.use((req, res, next) => {

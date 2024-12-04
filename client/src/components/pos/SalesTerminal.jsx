@@ -122,15 +122,25 @@ const SalesTerminal = () => {
 
   // Update item quantity
   const updateQuantity = (productId, change) => {
-    setCart(prevCart =>
-      prevCart.map(item => {
-        if (item.id === productId) {
-          const newQuantity = item.quantity + change;
-          return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
-        }
-        return item;
-      }).filter(Boolean)
-    );
+    if (!productId) {
+      console.error('Invalid product ID');
+      return;
+    }
+
+    setCart(prevCart => {
+      if (!prevCart) return [];
+      
+      return prevCart
+        .map(item => {
+          if (!item || !item.id) return null;
+          if (item.id === productId) {
+            const newQuantity = item.quantity + change;
+            return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
+          }
+          return item;
+        })
+        .filter(Boolean); // Remove any null values
+    });
   };
 
   // Remove item from cart
@@ -147,20 +157,37 @@ const SalesTerminal = () => {
 
   // Handle payment
   const handlePayment = () => {
-    // Implement payment processing logic here
-    console.log('Processing payment:', {
-      items: cart,
-      subtotal,
-      tax,
-      discount,
-      total,
-      paymentMethod,
-      amountReceived
-    });
+    if (!cart || cart.length === 0) {
+      console.error('Cannot process payment: Cart is empty');
+      return;
+    }
 
-    // Clear cart after successful payment
-    clearCart();
-    setPaymentDialog(false);
+    // Validate cart items
+    const invalidItems = cart.filter(item => !item || !item.id);
+    if (invalidItems.length > 0) {
+      console.error('Invalid items in cart:', invalidItems);
+      return;
+    }
+
+    // Process payment
+    try {
+      console.log('Processing payment:', {
+        items: cart,
+        subtotal,
+        tax,
+        discount,
+        total,
+        paymentMethod,
+        amountReceived
+      });
+
+      // Clear cart after successful payment
+      clearCart();
+      setPaymentDialog(false);
+    } catch (error) {
+      console.error('Payment processing failed:', error);
+      // Here you might want to show an error message to the user
+    }
   };
 
   return (
@@ -192,19 +219,40 @@ const SalesTerminal = () => {
           <CartContainer>
             <List>
               {cart.map((item) => (
-                <ListItem key={item.id} divider>
-                  <ListItemText
-                    primary={item.name}
-                    secondary={formatCurrency(item.price)}
-                  />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ListItem 
+                  key={item.id} 
+                  divider
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 2,
+                    py: 1
+                  }}
+                >
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle1" noWrap>
+                      {item.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatCurrency(item.price)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    flexShrink: 0 
+                  }}>
                     <IconButton
                       size="small"
                       onClick={() => updateQuantity(item.id, -1)}
                     >
                       <RemoveIcon />
                     </IconButton>
-                    <Typography>{item.quantity}</Typography>
+                    <Typography sx={{ minWidth: '24px', textAlign: 'center' }}>
+                      {item.quantity}
+                    </Typography>
                     <IconButton
                       size="small"
                       onClick={() => updateQuantity(item.id, 1)}
@@ -215,6 +263,7 @@ const SalesTerminal = () => {
                       size="small"
                       onClick={() => removeFromCart(item.id)}
                       color="error"
+                      sx={{ ml: 1 }}
                     >
                       <DeleteIcon />
                     </IconButton>
