@@ -13,13 +13,11 @@ router.post('/accounts',
 
 router.get('/accounts',
     authenticate,
-    authorize(['admin', 'accountant', 'viewer']),
     AccountController.getAccounts
 );
 
 router.get('/accounts/:id',
     authenticate,
-    authorize(['admin', 'accountant', 'viewer']),
     AccountController.getAccountById
 );
 
@@ -44,13 +42,11 @@ router.post('/transactions',
 
 router.get('/transactions',
     authenticate,
-    authorize(['admin', 'accountant', 'viewer']),
     TransactionController.getTransactions
 );
 
 router.get('/transactions/:id',
     authenticate,
-    authorize(['admin', 'accountant', 'viewer']),
     TransactionController.getTransactionById
 );
 

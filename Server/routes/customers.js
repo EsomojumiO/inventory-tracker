@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
+const ApiError = require('../utils/ApiError');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -31,7 +32,7 @@ const upload = multer({
 });
 
 // Get all customers with advanced filtering
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res, next) => {
   try {
     const {
       search,
@@ -47,9 +48,9 @@ router.get('/', authenticateToken, async (req, res) => {
     } = req.query;
 
     // Build query
-    let query = { createdBy: req.user.id };
+    let query = { organization: req.user.organizationId };
 
-    // Add search functionality
+    // Add search filter
     if (search) {
       query.$or = [
         { firstName: { $regex: search, $options: 'i' } },
@@ -60,49 +61,63 @@ router.get('/', authenticateToken, async (req, res) => {
       ];
     }
 
-    // Add filters
-    if (type) query.type = type;
-    if (status) query.status = status;
-    if (category) query.category = category;
-    if (city) query['address.city'] = city;
-    if (state) query['address.state'] = state;
+    // Add type filter
+    if (type) {
+      query.type = type;
+    }
 
-    // Count total documents for pagination
-    const totalCustomers = await Customer.countDocuments(query);
+    // Add status filter
+    if (status) {
+      query.status = status;
+    }
 
-    // Build and execute query
+    // Add category filter
+    if (category) {
+      query.category = category;
+    }
+
+    // Add location filters
+    if (city) {
+      query['address.city'] = city;
+    }
+    if (state) {
+      query['address.state'] = state;
+    }
+
+    // Count total documents
+    const total = await Customer.countDocuments(query);
+
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+    // Execute query with pagination
     const customers = await Customer.find(query)
-      .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .lean();
 
-    // Send response
     res.json({
       success: true,
-      customers,
+      data: customers,
       pagination: {
-        total: totalCustomers,
+        total,
         page: Number(page),
-        pages: Math.ceil(totalCustomers / limit)
+        pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {
-    console.error('Error fetching customers:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching customers',
-      error: error.message 
-    });
+    next(error);
   }
 });
 
 // Get customer by ID with detailed information
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     }).populate('createdBy', 'username');
 
     if (!customer) {
@@ -129,17 +144,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
       recentInteractions
     });
   } catch (error) {
-    console.error('Error fetching customer:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching customer',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Create new customer
-router.post('/', authenticateToken, upload.single('profileImage'), async (req, res) => {
+router.post('/', authenticate, upload.single('profileImage'), async (req, res, next) => {
   try {
     const customerData = { ...req.body };
     
@@ -148,9 +158,8 @@ router.post('/', authenticateToken, upload.single('profileImage'), async (req, r
       customerData.profileImage = `/uploads/customers/${req.file.filename}`;
     }
 
-    // Add creator information
-    customerData.createdBy = req.user.id;
-    customerData.updatedBy = req.user.id;
+    // Add organization information
+    customerData.organization = req.user.organizationId;
 
     // Create customer
     const customer = new Customer(customerData);
@@ -162,17 +171,12 @@ router.post('/', authenticateToken, upload.single('profileImage'), async (req, r
       customer
     });
   } catch (error) {
-    console.error('Error creating customer:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error creating customer',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Update customer
-router.put('/:id', authenticateToken, upload.single('profileImage'), async (req, res) => {
+router.put('/:id', authenticate, upload.single('profileImage'), async (req, res, next) => {
   try {
     const customerData = { ...req.body };
     
@@ -185,7 +189,7 @@ router.put('/:id', authenticateToken, upload.single('profileImage'), async (req,
     customerData.updatedBy = req.user.id;
 
     const customer = await Customer.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user.id },
+      { _id: req.params.id, organization: req.user.organizationId },
       customerData,
       { new: true }
     );
@@ -203,21 +207,16 @@ router.put('/:id', authenticateToken, upload.single('profileImage'), async (req,
       customer
     });
   } catch (error) {
-    console.error('Error updating customer:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating customer',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Add customer interaction
-router.post('/:id/interactions', authenticateToken, async (req, res) => {
+router.post('/:id/interactions', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     });
 
     if (!customer) {
@@ -240,21 +239,16 @@ router.post('/:id/interactions', authenticateToken, async (req, res) => {
       interaction: newInteraction
     });
   } catch (error) {
-    console.error('Error adding interaction:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error adding interaction',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Add customer note
-router.post('/:id/notes', authenticateToken, async (req, res) => {
+router.post('/:id/notes', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     });
 
     if (!customer) {
@@ -277,21 +271,16 @@ router.post('/:id/notes', authenticateToken, async (req, res) => {
       note: customer.notes[customer.notes.length - 1]
     });
   } catch (error) {
-    console.error('Error adding note:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error adding note',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Add loyalty points
-router.post('/:id/loyalty-points', authenticateToken, async (req, res) => {
+router.post('/:id/loyalty-points', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     });
 
     if (!customer) {
@@ -311,21 +300,16 @@ router.post('/:id/loyalty-points', authenticateToken, async (req, res) => {
       loyaltyTier: customer.loyaltyTier
     });
   } catch (error) {
-    console.error('Error adding loyalty points:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error adding loyalty points',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Get customer analytics
-router.get('/:id/analytics', authenticateToken, async (req, res) => {
+router.get('/:id/analytics', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOne({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     });
 
     if (!customer) {
@@ -374,21 +358,16 @@ router.get('/:id/analytics', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching customer analytics:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching customer analytics',
-      error: error.message
-    });
+    next(error);
   }
 });
 
 // Delete customer
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res, next) => {
   try {
     const customer = await Customer.findOneAndDelete({
       _id: req.params.id,
-      createdBy: req.user.id
+      organization: req.user.organizationId
     });
 
     if (!customer) {
@@ -403,12 +382,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       message: 'Customer deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting customer:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting customer',
-      error: error.message
-    });
+    next(error);
   }
 });
 

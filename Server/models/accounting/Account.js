@@ -64,5 +64,5 @@ accountSchema.index({ name: 1, organization: 1 });
 accountSchema.index({ type: 1 });
 accountSchema.index({ parentAccount: 1 });
 
-const Account = mongoose.model('Account', accountSchema);
-module.exports = Account;
+// Export the schema only if the model hasn't been registered
+module.exports = mongoose.models.Account || mongoose.model('Account', accountSchema);

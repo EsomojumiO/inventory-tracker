@@ -24,7 +24,7 @@ export const AccountingProvider = ({ children }) => {
     const { showSuccess, showError } = useNotification();
 
     const api = axios.create({
-        baseURL: `${config.apiUrl}/accounting`,
+        baseURL: `${config.apiUrl}/api/accounting`,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`

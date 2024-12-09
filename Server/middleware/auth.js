@@ -1,27 +1,50 @@
 const jwt = require('jsonwebtoken');
+const ApiError = require('../utils/ApiError');
+const User = require('../models/User');
 
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ 
-            success: false,
-            message: 'Authentication token required' 
-        });
-    }
-
+const authenticate = async (req, res, next) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        req.user = decoded;
-        next();
+        // Get token from header
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            throw new ApiError('No token provided', 401);
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        try {
+            // Verify token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            
+            // Get user from token
+            const user = await User.findById(decoded.userId)
+                .select('-password -refreshTokens');
+                
+            if (!user) {
+                throw new ApiError('User not found', 401);
+            }
+
+            // Add user to request
+            req.user = user;
+            next();
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                throw new ApiError('Token expired', 401);
+            }
+            throw new ApiError('Invalid token', 401);
+        }
     } catch (error) {
-        console.error('Token verification error:', error);
-        return res.status(403).json({ 
-            success: false,
-            message: 'Invalid or expired token' 
-        });
+        next(error);
     }
 };
 
-module.exports = { authenticateToken };
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            throw new ApiError('Not authorized to access this route', 403);
+        }
+        next();
+    };
+};
+
+module.exports = { authenticate, authorize };

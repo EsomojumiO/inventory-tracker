@@ -11,12 +11,17 @@ const connectDB = require('./db');
 const authRoutes = require('./routes/auth');
 const inventoryRoutes = require('./routes/inventory');
 const supplierRoutes = require('./routes/suppliers');
-const customerRoutes = require('./routes/customers');
+const customersRoutes = require('./routes/customers');
 const orderRoutes = require('./routes/orders');
+const accountingRoutes = require('./routes/accounting');
+const healthRoutes = require('./routes/health');
 const validateEnv = require('./config/env-validator');
 const { getCacheMiddleware } = require('./config/cache-config');
 const { handleError, AppError, ErrorCodes } = require('./utils/error-handler');
-const healthRoutes = require('./routes/health');
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passport'); // Import passport config
+const { authenticate } = require('./middleware/auth');
 
 // Validate environment variables before proceeding
 validateEnv();
@@ -79,10 +84,15 @@ app.use(helmet({
 app.use(globalLimiter); // Global rate limiting
 app.use('/api/', apiLimiter); // Stricter API rate limiting
 
-// CORS configuration with more secure options
+// CORS configuration
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [process.env.CLIENT_URL || 'http://localhost:3000'];
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5001',
+      process.env.CLIENT_URL
+    ].filter(Boolean);
+    
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -90,11 +100,27 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 600, // 10 minutes
+  maxAge: 600 // 10 minutes
 }));
+
+// Session middleware - before passport
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport and restore authentication state from session
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Compression middleware with optimized settings
 app.use(compression({
@@ -189,86 +215,57 @@ app.use('/', healthRoutes);
 // Connect to MongoDB with enhanced error handling
 const initializeServer = async () => {
   try {
-    await connectDB().then(() => {
-      // Mount API routes
-      app.use('/api/auth', authRoutes);
-      app.use('/api/inventory', inventoryRoutes);
-      app.use('/api/suppliers', supplierRoutes);
-      app.use('/api/customers', customerRoutes);
-      app.use('/api/orders', orderRoutes);
+    await connectDB();
+    
+    // Mount API routes
+    app.use('/api/auth', authRoutes);
+    app.use('/api/inventory', authenticate, inventoryRoutes);
+    app.use('/api/suppliers', authenticate, supplierRoutes);
+    app.use('/api/customers', authenticate, customersRoutes);
+    app.use('/api/orders', authenticate, orderRoutes);
+    app.use('/api/accounting', authenticate, accountingRoutes);
+    app.use('/api/health', healthRoutes);
 
-      // Handle 404s
-      app.use((req, res, next) => {
-        next(new AppError(`Route not found: ${req.method} ${req.path}`, 404, ErrorCodes.RESOURCE_NOT_FOUND));
-      });
-
-      // Global error handler
-      app.use((err, req, res, next) => {
-        handleError(err, req, res);
-      });
-
-      // Start server
-      const server = app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-      });
-
-      // Handle unhandled promise rejections
-      process.on('unhandledRejection', (err) => {
-        console.error('Unhandled Promise Rejection:', err);
-        // Log to error monitoring service if available
-        if (process.env.NODE_ENV === 'production') {
-          // Implement your error monitoring service here
-          // Example: Sentry.captureException(err);
-        }
-      });
-
-      // Handle uncaught exceptions
-      process.on('uncaughtException', (err) => {
-        console.error('Uncaught Exception:', err);
-        // Log to error monitoring service if available
-        if (process.env.NODE_ENV === 'production') {
-          // Implement your error monitoring service here
-          // Example: Sentry.captureException(err);
-        }
-        // Gracefully shutdown
-        server.close(() => {
-          process.exit(1);
-        });
-      });
-
-      // Graceful shutdown
-      const shutdown = async () => {
-        console.log('Received shutdown signal');
-        
-        server.close(async () => {
-          console.log('HTTP server closed');
-          
-          try {
-            await mongoose.connection.close();
-            console.log('MongoDB connection closed');
-            process.exit(0);
-          } catch (err) {
-            console.error('Error during shutdown:', err);
-            process.exit(1);
-          }
-        });
-
-        // Force shutdown after 30 seconds
-        setTimeout(() => {
-          console.error('Could not close connections in time, forcefully shutting down');
-          process.exit(1);
-        }, 30000);
-      };
-
-      process.on('SIGTERM', shutdown);
-      process.on('SIGINT', shutdown);
-
-    }).catch(err => {
-      console.error('Failed to connect to MongoDB:', err);
-      process.exit(1);
+    // Handle 404s
+    app.use((req, res, next) => {
+      next(new AppError(`Route not found: ${req.method} ${req.originalUrl}`, 404, ErrorCodes.RESOURCE_NOT_FOUND));
     });
-  } catch (err) {
-    console.error('Failed to initialize server:', err);
+
+    // Global error handler
+    app.use((err, req, res, next) => {
+      handleError(err, req, res);
+    });
+
+    // Start server
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+    // Handle unhandled promise rejections
+    process.on('unhandledRejection', (err) => {
+      console.error('Unhandled Promise Rejection:', err);
+      // Log to error monitoring service if available
+      if (process.env.NODE_ENV === 'production') {
+        // Implement your error monitoring service here
+        // Example: Sentry.captureException(err);
+      }
+    });
+
+    // Handle uncaught exceptions
+    process.on('uncaughtException', (err) => {
+      console.error('Uncaught Exception:', err);
+      // Log to error monitoring service if available
+      if (process.env.NODE_ENV === 'production') {
+        // Implement your error monitoring service here
+        // Example: Sentry.captureException(err);
+      }
+      // Exit process on uncaught exception in production
+      if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+      }
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
     process.exit(1);
   }
 };

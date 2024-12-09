@@ -95,6 +95,36 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (userData) => {
+        try {
+            // Validate required fields
+            const requiredFields = ['username', 'email', 'password', 'firstName', 'lastName', 'phone', 'businessName'];
+            const missingFields = requiredFields.filter(field => !userData[field]);
+            
+            if (missingFields.length > 0) {
+                const message = `Missing required fields: ${missingFields.join(', ')}`;
+                showError(message);
+                return { success: false, error: message };
+            }
+
+            const response = await api.post('/auth/register', userData);
+            const { token, user } = response.data;
+            
+            localStorage.setItem(config.tokenKey, token);
+            setToken(token);
+            setUser(user);
+            setIsAuthenticated(true);
+            showSuccess('Registration successful!');
+            
+            return { success: true };
+        } catch (error) {
+            const message = error.response?.data?.message || 'Registration failed';
+            showError(message);
+            setError(message);
+            return { success: false, error: message };
+        }
+    };
+
     const logout = useCallback(() => {
         localStorage.removeItem(config.tokenKey);
         setToken(null);
@@ -110,6 +140,7 @@ export const AuthProvider = ({ children }) => {
         error,
         isAuthenticated,
         login,
+        register,
         logout
     };
 

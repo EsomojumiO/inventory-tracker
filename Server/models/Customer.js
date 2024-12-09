@@ -52,28 +52,12 @@ const customerSchema = new mongoose.Schema({
   // Financial Information
   creditLimit: { type: Number, default: 0 },
   currentCredit: { type: Number, default: 0 },
-  paymentTerms: {
-    type: String,
-    enum: ['prepaid', 'net15', 'net30', 'net60', 'custom'],
-    default: 'prepaid'
-  },
-  customPaymentTerms: { type: String },
-  preferredPaymentMethod: {
-    type: String,
-    enum: ['cash', 'bank_transfer', 'credit_card', 'check', 'mobile_money'],
-    default: 'cash'
-  },
-  bankDetails: {
-    bankName: String,
-    accountNumber: String,
-    accountName: String
-  },
-  
-  // Customer Engagement & Loyalty
-  lastPurchaseDate: Date,
-  totalPurchases: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
+  totalPurchases: { type: Number, default: 0 },
   averageOrderValue: { type: Number, default: 0 },
+  lastPurchaseDate: Date,
+  
+  // Loyalty Program
   loyaltyPoints: { type: Number, default: 0 },
   loyaltyTier: {
     type: String,
@@ -81,96 +65,68 @@ const customerSchema = new mongoose.Schema({
     default: 'bronze'
   },
   
-  // Communication Preferences & History
-  communicationPreferences: {
-    email: { type: Boolean, default: true },
-    sms: { type: Boolean, default: true },
-    whatsapp: { type: Boolean, default: true },
-    marketing: { type: Boolean, default: true }
-  },
-  
-  communications: [{
-    type: {
-      type: String,
-      enum: ['email', 'sms', 'whatsapp', 'call', 'meeting', 'other']
-    },
-    direction: {
-      type: String,
-      enum: ['inbound', 'outbound'],
-      default: 'outbound'
-    },
-    subject: String,
-    content: String,
-    status: {
-      type: String,
-      enum: ['pending', 'sent', 'delivered', 'failed'],
-      default: 'pending'
-    },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    createdAt: { type: Date, default: Date.now }
-  }],
-  
-  // Custom Fields & Tags
-  customFields: [{
-    name: String,
-    value: String,
-    type: {
-      type: String,
-      enum: ['text', 'number', 'date', 'boolean'],
-      default: 'text'
-    }
-  }],
-  tags: [String],
-  
-  // Notes & Interactions
+  // Customer Interactions
   notes: [{
-    title: String,
     content: String,
-    type: {
-      type: String,
-      enum: ['general', 'payment', 'complaint', 'feedback'],
-      default: 'general'
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     },
-    priority: {
-      type: String,
-      enum: ['low', 'medium', 'high'],
-      default: 'low'
-    },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
   
   interactions: [{
     type: {
       type: String,
-      enum: ['call', 'email', 'meeting', 'purchase', 'support', 'complaint', 'feedback', 'other']
+      enum: ['call', 'email', 'meeting', 'support', 'other']
     },
     description: String,
     outcome: String,
-    followUpRequired: { type: Boolean, default: false },
-    followUpDate: Date,
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    createdAt: { type: Date, default: Date.now }
+    nextAction: String,
+    nextActionDate: Date,
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
-
-  // Metadata
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  
+  // Organization and User Information
+  organization: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Organization',
+    required: true
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }
 }, {
   timestamps: true
 });
 
-// Indexes for better query performance
-customerSchema.index({ email: 1 });
-customerSchema.index({ phone: 1 });
-customerSchema.index({ businessName: 1 });
-customerSchema.index({ 'address.city': 1, 'address.state': 1 });
-customerSchema.index({ category: 1 });
-customerSchema.index({ status: 1 });
-customerSchema.index({ tags: 1 });
-customerSchema.index({ lastPurchaseDate: -1 });
-customerSchema.index({ totalSpent: -1 });
-customerSchema.index({ loyaltyPoints: -1 });
+// Indexes
+customerSchema.index({ email: 1, organization: 1 }, { unique: true, sparse: true });
+customerSchema.index({ phone: 1, organization: 1 }, { unique: true });
+customerSchema.index({ businessName: 1, organization: 1 });
+customerSchema.index({ 'address.city': 1, organization: 1 });
+customerSchema.index({ 'address.state': 1, organization: 1 });
+customerSchema.index({ status: 1, organization: 1 });
+customerSchema.index({ category: 1, organization: 1 });
+customerSchema.index({ loyaltyTier: 1, organization: 1 });
+customerSchema.index({ totalSpent: 1, organization: 1 });
+customerSchema.index({ lastPurchaseDate: 1, organization: 1 });
 
 // Virtual for full name
 customerSchema.virtual('fullName').get(function() {
@@ -186,10 +142,11 @@ customerSchema.methods.calculateLifetimeValue = function() {
 customerSchema.methods.addLoyaltyPoints = async function(points, reason = 'purchase') {
   this.loyaltyPoints += points;
   
-  // Update loyalty tier based on total points
+  // Update loyalty tier based on points
   if (this.loyaltyPoints >= 10000) this.loyaltyTier = 'platinum';
   else if (this.loyaltyPoints >= 5000) this.loyaltyTier = 'gold';
   else if (this.loyaltyPoints >= 1000) this.loyaltyTier = 'silver';
+  else this.loyaltyTier = 'bronze';
   
   await this.save();
   return this.loyaltyPoints;
@@ -209,8 +166,8 @@ customerSchema.methods.addInteraction = async function(interaction) {
 
 // Method to update order statistics
 customerSchema.methods.updateOrderStats = async function(orderAmount) {
-  this.totalPurchases += 1;
   this.totalSpent += orderAmount;
+  this.totalPurchases += 1;
   this.lastPurchaseDate = new Date();
   this.averageOrderValue = this.totalSpent / this.totalPurchases;
   await this.save();
@@ -231,6 +188,5 @@ customerSchema.pre('save', function(next) {
   next();
 });
 
-const Customer = mongoose.model('Customer', customerSchema);
-
-module.exports = Customer;
+// Export the schema only if the model hasn't been registered
+module.exports = mongoose.models.Customer || mongoose.model('Customer', customerSchema);

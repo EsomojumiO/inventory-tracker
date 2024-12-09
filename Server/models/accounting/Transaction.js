@@ -104,5 +104,5 @@ transactionSchema.pre('save', function(next) {
     next();
 });
 
-const Transaction = mongoose.model('Transaction', transactionSchema);
-module.exports = Transaction;
+// Export the schema only if the model hasn't been registered
+module.exports = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);

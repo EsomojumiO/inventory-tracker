@@ -4,7 +4,9 @@ const bcrypt = require('bcrypt');
 const ROLES = {
     ADMIN: 'admin',
     USER: 'user',
-    STAFF: 'staff'
+    STAFF: 'staff',
+    ACCOUNTANT: 'accountant',
+    VIEWER: 'viewer'
 };
 
 const PERMISSIONS = {
@@ -15,17 +17,31 @@ const PERMISSIONS = {
         'view_sales',
         'manage_sales',
         'view_reports',
-        'manage_settings'
+        'manage_settings',
+        'manage_accounting',
+        'view_accounting'
+    ],
+    [ROLES.ACCOUNTANT]: [
+        'view_accounting',
+        'manage_accounting',
+        'view_reports'
     ],
     [ROLES.STAFF]: [
         'view_inventory',
         'manage_inventory',
         'view_sales',
-        'manage_sales'
+        'manage_sales',
+        'view_accounting'
+    ],
+    [ROLES.VIEWER]: [
+        'view_inventory',
+        'view_sales',
+        'view_accounting'
     ],
     [ROLES.USER]: [
         'view_inventory',
-        'view_sales'
+        'view_sales',
+        'view_accounting'
     ]
 };
 
@@ -77,8 +93,12 @@ const userSchema = new mongoose.Schema({
     },
     businessName: {
         type: String,
-        required: [true, 'Business name is required'],
+        required: true,
         trim: true
+    },
+    organization: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization'
     },
     google: {
         id: String,
@@ -101,7 +121,8 @@ const userSchema = new mongoose.Schema({
         default: true
     },
     lastLogin: {
-        type: Date
+        type: Date,
+        default: null
     },
     loginAttempts: {
         type: Number,
@@ -109,6 +130,14 @@ const userSchema = new mongoose.Schema({
     },
     lockUntil: {
         type: Date
+    },
+    refreshTokens: [{
+        type: String
+    }],
+    status: {
+        type: String,
+        enum: ['active', 'inactive', 'suspended'],
+        default: 'active'
     },
     createdAt: {
         type: Date,

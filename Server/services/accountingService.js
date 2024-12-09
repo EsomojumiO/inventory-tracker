@@ -36,6 +36,82 @@ class AccountingService {
 
     // Local Accounting Methods
 
+    async createDefaultAccounts(organizationId, userId) {
+        const defaultAccounts = [
+            {
+                code: '1000',
+                name: 'Cash',
+                type: 'ASSET',
+                subtype: 'CURRENT',
+                description: 'Cash on hand',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '1100',
+                name: 'Bank',
+                type: 'ASSET',
+                subtype: 'CURRENT',
+                description: 'Bank accounts',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '1200',
+                name: 'Accounts Receivable',
+                type: 'ASSET',
+                subtype: 'CURRENT',
+                description: 'Money owed by customers',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '2000',
+                name: 'Accounts Payable',
+                type: 'LIABILITY',
+                subtype: 'CURRENT',
+                description: 'Money owed to suppliers',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '3000',
+                name: 'Capital',
+                type: 'EQUITY',
+                subtype: 'OPERATING',
+                description: 'Owner\'s equity',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '4000',
+                name: 'Sales Revenue',
+                type: 'REVENUE',
+                subtype: 'OPERATING',
+                description: 'Income from sales',
+                organization: organizationId,
+                createdBy: userId
+            },
+            {
+                code: '5000',
+                name: 'Cost of Goods Sold',
+                type: 'EXPENSE',
+                subtype: 'OPERATING',
+                description: 'Direct costs of items sold',
+                organization: organizationId,
+                createdBy: userId
+            }
+        ];
+
+        try {
+            await Account.insertMany(defaultAccounts);
+            logger.info(`Created default accounts for organization ${organizationId}`);
+        } catch (error) {
+            logger.error('Error creating default accounts:', error);
+            throw error;
+        }
+    }
+
     async createAccount(accountData, organizationId, userId) {
         try {
             const account = new Account({

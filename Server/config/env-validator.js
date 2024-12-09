@@ -1,38 +1,46 @@
-const requiredEnvVars = {
-  NODE_ENV: ['development', 'production', 'test'],
-  PORT: value => !isNaN(value) && value > 0,
-  MONGODB_URI: value => value && value.includes('mongodb'),
-  JWT_SECRET: value => value && value.length >= 32,
-  CLIENT_URL: value => value && (value.startsWith('http://') || value.startsWith('https://')),
+const validateEnv = () => {
+    const requiredEnvVars = [
+        'NODE_ENV',
+        'PORT',
+        'MONGODB_URI',
+        'JWT_SECRET',
+        'CLIENT_URL'
+    ];
+
+    const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+    if (missingEnvVars.length > 0) {
+        throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    }
+
+    // Validate PORT is a number
+    if (isNaN(process.env.PORT)) {
+        throw new Error('PORT must be a number');
+    }
+
+    // Validate NODE_ENV
+    const validEnvs = ['development', 'production', 'test'];
+    if (!validEnvs.includes(process.env.NODE_ENV)) {
+        throw new Error('NODE_ENV must be one of: development, production, test');
+    }
+
+    // Validate MONGODB_URI format
+    const mongoUrlPattern = /^mongodb(\+srv)?:\/\/.+/;
+    if (!mongoUrlPattern.test(process.env.MONGODB_URI)) {
+        throw new Error('Invalid MONGODB_URI format');
+    }
+
+    // Validate JWT_SECRET length
+    if (process.env.JWT_SECRET.length < 16) {
+        throw new Error('JWT_SECRET must be at least 16 characters long');
+    }
+
+    // Validate CLIENT_URL format
+    try {
+        new URL(process.env.CLIENT_URL);
+    } catch (error) {
+        throw new Error('Invalid CLIENT_URL format');
+    }
 };
-
-function validateEnv() {
-  const errors = [];
-
-  for (const [key, validator] of Object.entries(requiredEnvVars)) {
-    const value = process.env[key];
-    
-    if (!value) {
-      errors.push(`Missing required environment variable: ${key}`);
-      continue;
-    }
-
-    if (Array.isArray(validator)) {
-      if (!validator.includes(value)) {
-        errors.push(`Invalid value for ${key}. Must be one of: ${validator.join(', ')}`);
-      }
-    } else if (typeof validator === 'function') {
-      if (!validator(value)) {
-        errors.push(`Invalid value for ${key}`);
-      }
-    }
-  }
-
-  if (errors.length > 0) {
-    console.error('Environment validation failed:');
-    errors.forEach(err => console.error('- ' + err));
-    process.exit(1);
-  }
-}
 
 module.exports = validateEnv;

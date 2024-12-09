@@ -29,22 +29,35 @@ class AccountController {
 
     async getAccounts(req, res, next) {
         try {
+            if (!req.user || !req.user.organizationId) {
+                throw new ApiError(401, 'Organization ID is required');
+            }
+
+            console.log('Fetching accounts for organization:', req.user.organizationId);
+            
             const accounts = await Account.find({
                 organization: req.user.organizationId,
                 ...req.query
             }).sort({ code: 1 });
+
+            console.log('Found accounts:', accounts.length);
 
             res.json({
                 success: true,
                 data: accounts
             });
         } catch (error) {
+            console.error('Error in getAccounts:', error);
             next(error);
         }
     }
 
     async getAccountById(req, res, next) {
         try {
+            if (!req.user || !req.user.organizationId) {
+                throw new ApiError(401, 'Organization ID is required');
+            }
+
             const account = await Account.findOne({
                 _id: req.params.id,
                 organization: req.user.organizationId

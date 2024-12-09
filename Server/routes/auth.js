@@ -3,9 +3,13 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { User, ROLES } = require('../models/User');
+const Organization = require('../models/Organization');
 const PasswordReset = require('../models/PasswordReset');
 const nodemailer = require('nodemailer');
 const passport = require('passport'); // Assuming you have installed and configured passport
+const AccountingService = require('../services/AccountingService');
+const ApiError = require('../utils/ApiError');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key'; // Use environment variable
@@ -24,18 +28,14 @@ const isValidEmail = (email) => {
     return /\S+@\S+\.\S+/.test(email);
 };
 
-// Generate JWT token
-const generateToken = (user) => {
-    return jwt.sign(
-        { 
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            role: user.role || 'user'
-        },
-        SECRET_KEY,
-        { expiresIn: '24h' }
-    );
+// Generate access token
+const generateAccessToken = (userId) => {
+    return jwt.sign({ userId }, SECRET_KEY, { expiresIn: '15m' });
+};
+
+// Generate refresh token
+const generateRefreshToken = (userId) => {
+    return jwt.sign({ userId }, SECRET_KEY, { expiresIn: '7d' });
 };
 
 // Set token cookie
@@ -50,62 +50,55 @@ const setTokenCookie = (res, token) => {
 };
 
 // Login route
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
     try {
         const { username, password } = req.body;
         
         // Validate input
         if (!username || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Username and password are required' 
-            });
+            throw new ApiError('Username and password are required', 400);
         }
 
         // Find user
         const user = await User.findOne({ username }).select('+password');
         if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid username or password' 
-            });
+            throw new ApiError('Invalid username or password', 401);
         }
 
         // Verify password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Invalid username or password' 
-            });
+            throw new ApiError('Invalid username or password', 401);
         }
 
-        // Generate token
-        const token = generateToken(user);
+        // Generate tokens
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
 
-        // Send response
+        // Save refresh token
+        user.refreshTokens = user.refreshTokens || [];
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+
+        // Remove sensitive data
+        user.password = undefined;
+        user.refreshTokens = undefined;
+
         res.json({
             success: true,
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
+            data: {
+                user,
+                accessToken,
+                refreshToken
             }
         });
-
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error during login' 
-        });
+        next(error);
     }
 });
 
-// Register route
-router.post('/register', async (req, res) => {
+// Registration route
+router.post('/register', async (req, res, next) => {
     try {
         const { 
             username, 
@@ -118,112 +111,166 @@ router.post('/register', async (req, res) => {
         } = req.body;
 
         // Validate input
-        if (!username || !password || !email || !firstName || !lastName || !phone || !businessName) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'All fields are required' 
-            });
+        if (!username || !email || !password || !firstName || !lastName || !phone || !businessName) {
+            throw new ApiError('All fields are required', 400);
         }
 
-        // Validate username format
-        if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Username must be 3-20 alphanumeric characters' 
-            });
-        }
-
-        // Validate email format
         if (!isValidEmail(email)) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Invalid email format' 
-            });
+            throw new ApiError('Invalid email format', 400);
         }
 
-        // Validate password length and complexity
-        if (password.length < 8) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Password must be at least 8 characters long' 
-            });
-        }
-        if (!/[A-Z]/.test(password)) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Password must contain at least one uppercase letter' 
-            });
-        }
-        if (!/[a-z]/.test(password)) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Password must contain at least one lowercase letter' 
-            });
-        }
-        if (!/[0-9]/.test(password)) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Password must contain at least one number' 
-            });
+        // Check if user already exists
+        const existingUser = await User.findOne({ 
+            $or: [
+                { email: email.toLowerCase() },
+                { username: username.toLowerCase() }
+            ]
+        });
+
+        if (existingUser) {
+            throw new ApiError('User with this email or username already exists', 400);
         }
 
-        // Validate phone number
-        if (!/^\+?[\d\s-]{10,}$/.test(phone)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid phone number format'
-            });
-        }
-
-        // Check if user exists
-        let user = await User.findOne({ $or: [{ username }, { email }] });
-        if (user) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Username or email already exists' 
-            });
-        }
-
-        // Create new user
-        user = new User({
-            username,
-            password,
-            email,
-            firstName,
-            lastName,
-            phone,
-            businessName,
-            role: 'user'
+        // Create organization
+        const organizationCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+        const organization = new Organization({
+            name: businessName,
+            code: organizationCode,
+            contact: {
+                email,
+                phone
+            },
+            createdBy: null // Will be updated after user creation
         });
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
+        // Create new user
+        const user = new User({
+            username: username.toLowerCase(),
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            firstName,
+            lastName,
+            phone,
+            businessName,
+            organization: organization._id,
+            role: ROLES.USER
+        });
+
+        // Save organization and update createdBy
+        organization.createdBy = user._id;
+        await organization.save();
+        
         // Save user
         await user.save();
 
-        // Generate token
-        const token = generateToken(user);
+        // Create default accounts for the organization
+        await AccountingService.createDefaultAccounts(organization._id, user._id);
 
-        // Send response
-        res.status(201).json({
+        // Generate tokens
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        // Save refresh token
+        user.refreshTokens = user.refreshTokens || [];
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+
+        // Remove sensitive data
+        user.password = undefined;
+        user.refreshTokens = undefined;
+
+        res.json({
             success: true,
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
+            data: {
+                user,
+                accessToken,
+                refreshToken
             }
         });
-
     } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error during registration' 
+        next(error);
+    }
+});
+
+// Refresh token
+router.post('/refresh-token', async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            throw new ApiError('Refresh token is required', 400);
+        }
+
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, SECRET_KEY);
+
+        // Find user and check if refresh token exists
+        const user = await User.findById(decoded.userId);
+        if (!user || !user.refreshTokens?.includes(refreshToken)) {
+            throw new ApiError('Invalid refresh token', 401);
+        }
+
+        // Generate new tokens
+        const accessToken = generateAccessToken(user._id);
+        const newRefreshToken = generateRefreshToken(user._id);
+
+        // Replace old refresh token
+        user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+        user.refreshTokens.push(newRefreshToken);
+        await user.save();
+
+        res.json({
+            success: true,
+            data: {
+                accessToken,
+                refreshToken: newRefreshToken
+            }
         });
+    } catch (error) {
+        if (error.name === 'JsonWebTokenError') {
+            return next(new ApiError('Invalid refresh token', 401));
+        }
+        next(error);
+    }
+});
+
+// Logout
+router.post('/logout', authenticate, async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+
+        // Remove refresh token
+        const user = await User.findById(req.user._id);
+        user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Logged out successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Get current user
+router.get('/me', authenticate, async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            throw new ApiError('User not found', 404);
+        }
+
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        next(error);
     }
 });
 
@@ -252,96 +299,6 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
-// Logout
-router.post('/logout', (req, res) => {
-    // Clear token cookie
-    res.clearCookie('token', { 
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-    });
-
-    res.json({
-        success: true,
-        message: 'Logged out successfully'
-    });
-});
-
-// Refresh token
-router.post('/refresh', async (req, res) => {
-    try {
-        const token = req.cookies.token;
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'No token provided'
-            });
-        }
-
-        const decoded = jwt.verify(token, SECRET_KEY);
-        const user = await User.findById(decoded.id);
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Generate new token and set cookie
-        const newToken = generateToken(user);
-        setTokenCookie(res, newToken);
-
-        res.json({
-            success: true,
-            token: newToken,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            }
-        });
-    } catch (error) {
-        console.error('Token refresh error:', error);
-        res.status(401).json({
-            success: false,
-            message: 'Invalid or expired token'
-        });
-    }
-});
-
-// Check auth status
-router.get('/check', authenticateToken, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password');
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        res.json({
-            success: true,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role
-            }
-        });
-    } catch (error) {
-        console.error('Auth check error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error checking authentication status'
-        });
-    }
-});
-
 // Verify authentication status
 router.get('/verify', async (req, res) => {
     try {
@@ -359,7 +316,7 @@ router.get('/verify', async (req, res) => {
         const decoded = jwt.verify(token, SECRET_KEY);
         
         // Get user data (excluding password)
-        const user = await User.findById(decoded.id).select('-password');
+        const user = await User.findById(decoded.userId).select('-password');
         
         if (!user) {
             return res.status(404).json({
@@ -484,7 +441,7 @@ router.get('/google/callback',
     }),
     (req, res) => {
         try {
-            const token = generateToken(req.user);
+            const token = generateAccessToken(req.user._id);
             setTokenCookie(res, token);
             res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard`);
         } catch (error) {
@@ -509,7 +466,7 @@ router.get('/apple/callback',
     }),
     (req, res) => {
         try {
-            const token = generateToken(req.user);
+            const token = generateAccessToken(req.user._id);
             setTokenCookie(res, token);
             res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard`);
         } catch (error) {

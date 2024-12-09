@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { User } = require('../models/User');
+const User = require('../models/User');
+const TokenService = require('../services/tokenService');
+const ApiError = require('../utils/ApiError');
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -19,25 +21,22 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
 
         // Find user
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid credentials'
-            });
+            throw new ApiError('Invalid credentials', 401);
         }
 
         // Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid credentials'
-            });
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            throw new ApiError('Invalid credentials', 401);
         }
 
-        // Generate token
-        const token = generateToken(user);
+        // Generate tokens
+        const tokens = TokenService.generateTokens(user);
+
+        // Save refresh token
+        await TokenService.saveRefreshToken(user._id, tokens.refreshToken);
 
         // Set cookie options
         const cookieOptions = {
@@ -48,7 +47,7 @@ exports.login = async (req, res) => {
         };
 
         // Send response with cookie
-        res.cookie('token', token, cookieOptions)
+        res.cookie('token', tokens.accessToken, cookieOptions)
            .json({
                 success: true,
                 user: {
@@ -57,15 +56,11 @@ exports.login = async (req, res) => {
                     name: user.name,
                     role: user.role
                 },
-                token
+                tokens
             });
 
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred during login'
-        });
+        res.status(error.statusCode || 500).json({ error: error.message });
     }
 };
 
@@ -124,12 +119,34 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.logout = (req, res) => {
-    res.clearCookie('token')
-       .json({
-            success: true,
-            message: 'Logged out successfully'
-        });
+exports.logout = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        
+        if (!refreshToken) {
+            throw new ApiError('Refresh token is required', 400);
+        }
+
+        // Revoke refresh token
+        await TokenService.revokeRefreshToken(req.user._id, refreshToken);
+
+        res.clearCookie('token')
+           .json({ message: 'Logged out successfully' });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message });
+    }
+};
+
+exports.logoutAll = async (req, res) => {
+    try {
+        // Revoke all refresh tokens for the user
+        await TokenService.revokeAllUserTokens(req.user._id);
+
+        res.clearCookie('token')
+           .json({ message: 'Logged out from all devices successfully' });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ error: error.message });
+    }
 };
 
 exports.getMe = async (req, res) => {
@@ -157,16 +174,14 @@ exports.getMe = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
+        const { refreshToken } = req.body;
+        
+        if (!refreshToken) {
+            throw new ApiError('Refresh token is required', 400);
         }
 
-        // Generate new token
-        const token = generateToken(user);
+        // Generate new tokens
+        const tokens = await TokenService.refreshAccessToken(refreshToken);
 
         // Set cookie options
         const cookieOptions = {
@@ -177,23 +192,9 @@ exports.refreshToken = async (req, res) => {
         };
 
         // Send response with new cookie
-        res.cookie('token', token, cookieOptions)
-           .json({
-                success: true,
-                user: {
-                    id: user._id,
-                    email: user.email,
-                    name: user.name,
-                    role: user.role
-                },
-                token
-            });
-
+        res.cookie('token', tokens.accessToken, cookieOptions)
+           .json({ tokens });
     } catch (error) {
-        console.error('Token refresh error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'An error occurred while refreshing token'
-        });
+        res.status(error.statusCode || 500).json({ error: error.message });
     }
 };
